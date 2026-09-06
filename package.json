@@ -1,0 +1,11 @@
+{
+  "name": "movie-agent-interaction-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway local interaction prototype; no model integration",
+  "scripts": {
+    "dev": "node prototype/server.mjs",
+    "check": "node --check prototype/app.js && node --check prototype/state.js && node --check prototype/film-art.js && node --check prototype/server.mjs"
+  }
+}

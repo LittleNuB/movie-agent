@@ -15,4 +15,10 @@
 
 项目自己的视觉参考由此前会话的内置 imagegen 生成并经用户审阅；复制到本仓库时保留原图并核对哈希。它是静态 UI 示意，C 被否决，画面中的影片不是生成能力证明。
 
+## 交互原型来源补充
+
+`prototype/film-creation` 分支使用自行编写的 HTML、CSS、JavaScript 和 Node.js 内置静态服务，没有第三方 npm 运行依赖，未复制参考项目的应用代码。界面依据本项目 A／B 静态参考重新实现，C 不采用。图标为自行编写的简单路径，动态画面与低鸣分别由 Canvas、Web Audio 原创构造；未使用三部参考电影的画面或音乐。
+
+浏览器验收使用本机已安装的 Python Playwright 工具与 Chromium，工具及其浏览器二进制不随仓库提交。该测试依赖与最终产品依赖分开；没有因原型选择新增本项目开源许可证。
+
 更多来源与观察见[架构研究](./architecture-review-2026-09-05.md)、[创作交互来源](../product/creative-interaction.md)和[历史资料](../archive/README.md)。
