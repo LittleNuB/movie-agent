@@ -15,7 +15,7 @@
 | 产品、交互、Windows 本地部署方向 | 已确认，具体行为见设计文档 |
 | AgentScope 首选框架与电影领域复用方向 | 已确认方向，实际集成待验证 |
 | 前端视觉 | A 日间、B 夜间已选定；静态示意图不代表可运行产品 |
-| 可点击原型 | 独立分支已实现；14 组浏览器检查通过，用户体验审阅待完成 |
+| 可点击原型 | 独立分支已实现；2026-09-06 用户暂定通过 UI，浏览器检查单独记录 |
 | 真实模型基础接入 | 旧工作区完成 GLM 工具回传与媒体只读查询；不是本仓库实测 |
 | 电影制作与质量验证 | 未实现，七组二十一个场景族尚未执行 |
 
@@ -28,6 +28,7 @@
 - [项目术语](./CONTEXT.md)：统一理解剧本、素材、版本和授权。
 - [完整文档索引](./docs/README.md)：产品、架构、验证、研究与决定。
 - [可点击原型](./docs/plans/clickable-prototype.md)：已批准范围、交付分支与下一步。
+- [下一轮能力建设](./docs/plans/capability-mvp.md)：真实导演、声画生成、成片和修改；已登记，尚未开始。
 - [原型启动与体验](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/prototype/README.md)：切换到原型分支后，按说明在本机运行。
 - [浏览器检查与截图](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/docs/validation/clickable-prototype-2026-09-06.md)：示例交互证据，不代表真实电影能力。
 - [配置示例](./.env.example)：未来接入所需配置的说明，当前没有读取它的运行程序。

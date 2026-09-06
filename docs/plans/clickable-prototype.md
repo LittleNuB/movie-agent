@@ -1,6 +1,6 @@
 # 可点击原型 · 执行规格
 
-Status: implemented_pending_user_review
+Status: ui_provisionally_accepted
 
 Date: 2026-09-06
 
@@ -57,9 +57,13 @@ Date: 2026-09-06
 - 原型代码与使用说明：[prototype/film-creation 分支](https://github.com/LittleNuB/movie-agent/tree/prototype/film-creation/prototype)。该分支从文档基线 77a1cc0 开始，代码可整体舍弃，未合并为正式运行时。
 - 交付：本机静态服务、A／B 双主题、三栏与多标签作品、共创／托管、剧本提交快照、标注与历史版本、示例中止与异常沟通。仅使用示例凭据、预设回复及原创程序动画，无真实模型调用。
 - 证据：[浏览器检查与代表性截图](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/docs/validation/clickable-prototype-2026-09-06.md)。14 组浏览器检查通过；Standards 与 Spec 各发现 1 项，已修复并复核关闭。
-- 待用户回答的问题：三栏对话与作品标签页，能否清楚表达草稿／提交／采用、标注／发送及共创授权？目前没有用户体验验收结论。
-- 下一步是用户操作与视觉审阅。真实电影运行时、模型接入和整片人评继续分别推进，不将原型状态结构冻结为正式 API、数据库 Schema 或 Agent 数量。
+- 原型回答的问题：三栏对话与作品标签页，能否清楚表达草稿／提交／采用、标注／发送及共创授权？用户后续已暂定通过 UI，见末节。
+- 下一步是[真实电影能力建设](./capability-mvp.md)。真实运行时、模型接入和整片人评分别验证，不将原型状态结构冻结为正式 API、数据库 Schema 或 Agent 数量。
 
 ## 用户审阅后的设置修正
 
-用户对整体原型表示“感觉还行”，明确要求采用通用 API 填写方式。原型分支已更新连接管理、模型列表、用途分配与凭据显隐；Key 仅留页面内存。8 组聚焦浏览器检查通过，详见[设置调整验证](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/docs/validation/model-settings-2026-09-06.md)。更新后仍待用户审阅，本轮没有真实模型调用。
+用户对整体原型表示“感觉还行”，明确要求采用通用 API 填写方式。原型分支已更新连接管理、模型列表、用途分配与凭据显隐；Key 仅留页面内存。8 组聚焦浏览器检查通过，详见[设置调整验证](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/docs/validation/model-settings-2026-09-06.md)。设置检查时尚待用户审阅，没有真实模型调用。
+
+## UI 暂定通过与下一轮 · 2026-09-06
+
+设置调整后，用户明确表示：“UI 可以暂定通过，但是这个 agent 真正的价值应该在于能力，下一轮争取完成能力建设。”据此将现有界面作为暂定基线，下一项登记为[真实电影能力建设](./capability-mvp.md)。该反馈不等于逐项交互、真实运行可靠性或电影质量已获验收；历史浏览器记录保留其执行时的证据范围。
