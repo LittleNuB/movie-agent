@@ -1,6 +1,6 @@
 # 独立仓库与文档初始化 · 已批准规格
 
-Status: in_progress
+Status: completed
 
 Date: 2026-09-06
 
