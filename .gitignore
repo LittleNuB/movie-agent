@@ -1,0 +1,44 @@
+# Personal configuration and credentials
+.env
+.env.*
+!.env.example
+.secrets/
+secrets/
+*.key
+*.pem
+*.local.json
+*.local.toml
+*.local.yaml
+*.local.yml
+
+# Runtime state and generated media; curated docs/assets remain versioned
+/local-data/
+/data/
+/projects/
+/sessions/
+/outputs/
+/output/
+/generated/
+.cache/
+.scratch/
+*.log
+*.tmp
+
+# Future implementation dependencies and build artifacts
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+dist/
+build/
+coverage/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.playwright-cli/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

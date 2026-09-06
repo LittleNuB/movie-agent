@@ -1,0 +1,105 @@
+{
+  "format_version": 1,
+  "import_date": "2026-09-06",
+  "source_repository": "LittleNuB/digital-human-agent-mvp",
+  "source_git_head": "edb74cd913bf40c6ed82c2f1c4968c1f2fd1ff1c",
+  "source_basis": "working_tree_including_uncommitted_files",
+  "target_repository": "LittleNuB/movie-agent",
+  "notes": [
+    "Source hashes describe original worktree bytes, not committed versions.",
+    "Current documents have link and status corrections. Historical bodies have migration notices and relative-link repairs only.",
+    "No old Git history, application code, actual keys, personal config, runtime data, caches, or source preflight receipts imported."
+  ],
+  "files": [
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/product-proposal.md",
+      "destination": "docs/product/product-spec.md",
+      "source_sha256": "FF6F57E13FE80D9105F0EC807A21D768DFA72104C68F67F1D1CB765219CF990B",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/story-proposal-structure.md",
+      "destination": "docs/product/creative-interaction.md",
+      "source_sha256": "7D28FB325F7981625E41758AB20C463E25E526D554F44F4B8650DAD39ED533B6",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/frontend-grilling.md",
+      "destination": "docs/product/frontend-spec.md",
+      "source_sha256": "2E6AA9A68845684776CBE1A96C5247057405DAAF41742ADB1813715A7CED0EAA",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/technical-proposal.md",
+      "destination": "docs/architecture/technical-baseline.md",
+      "source_sha256": "DA1A7E4535FB67C2FE769142F0A9CBBBB80377164D5C757E8BBC5B2DAD9CDADB",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/architecture-review-2026-09-05.md",
+      "destination": "docs/architecture/architecture-review-2026-09-05.md",
+      "source_sha256": "0B237EFC960426AEAC015D432E3D4064748C7B77DA864F8F9DA1A01F56F99540",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/first-round-validation-matrix.md",
+      "destination": "docs/validation/first-round-matrix.md",
+      "source_sha256": "AB73DD156201977DA6B8548062FBABFA11D05E13CF1868B1081CDDE348D594FF",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/provider-setup-2026-09-06.md",
+      "destination": "docs/validation/provider-preflight-2026-09-06.md",
+      "source_sha256": "3F6E0877AC172F3B1ADB4AAE6AEFE8F75709733BDF27B59100FE3D35FFF2D315",
+      "change": "relative_links_and_current_status"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/product-proposal-2026-09-04-early-draft.md",
+      "destination": "docs/archive/2026-09-04/product-early-draft.md",
+      "source_sha256": "54C580951FEF4C60D953AC55946490328E372BD7B4B4DE660713670EC22CC4A9",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/technical-proposal-2026-09-04-early-draft.md",
+      "destination": "docs/archive/2026-09-04/technical-early-draft.md",
+      "source_sha256": "FD97C76CB6ADAB1FCB9C94C2EBDBECBBA9F2FCC790D0FF504ED0F66F67759496",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/document-review-2026-09-05.md",
+      "destination": "docs/archive/2026-09-05/document-review.md",
+      "source_sha256": "5E9F97F425729DD9364337E6B3CFE6B6A72AEB418F221EADAE964D78A2288D29",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": ".scratch/ai-film-agent-competition-2026-09-04/research/claim-ledger.md",
+      "destination": "docs/archive/2026-09-04/research/claim-ledger.md",
+      "source_sha256": "7E043E69A61B70A0F11D0290A599374F8643EF262EB51BFD74CAA007839E62C1",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": ".scratch/ai-film-agent-competition-2026-09-04/research/gap-matrix.md",
+      "destination": "docs/archive/2026-09-04/research/gap-matrix.md",
+      "source_sha256": "4CA853AA3A58C45EAC8F7484D3B041FFE0039A7D22B1D2C519E2489AC7687A21",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": ".scratch/ai-film-agent-competition-2026-09-04/research/report-source.md",
+      "destination": "docs/archive/2026-09-04/research/report-source.md",
+      "source_sha256": "8D62EBD064D1ACD0EF9873BCB7462F1BA5828F1587C8FC728957B015D9B6E144",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": ".scratch/ai-film-agent-competition-2026-09-04/research/reader-check.md",
+      "destination": "docs/archive/2026-09-04/research/reader-check.md",
+      "source_sha256": "A02C01A3DD6521FBF05913C71F3ACBB7591E2369EB1909357D52733646293022",
+      "change": "historical_notice_and_relative_links"
+    },
+    {
+      "source": "docs/research/ai-film-agent-competition-2026-09-04/assets/frontend-theme-comparison-2026-09-06.png",
+      "destination": "docs/assets/frontend-theme-comparison-2026-09-06.png",
+      "source_sha256": "0E38FEA42EB9046BB16E5D381760AC96CB761423F2A6760BCB2F106834B421F5",
+      "change": "byte_identical_copy"
+    }
+  ]
+}
