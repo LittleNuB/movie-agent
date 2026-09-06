@@ -9,7 +9,7 @@
 | [独立私有仓库与文档初始化](../plans/repository-initialization.md) | 已完成并推送；检查结果见验收记录 | 所有者明确要求按初始化计划建仓、提交与推送 |
 | [可点击原型](../plans/clickable-prototype.md) | 已实现于 `prototype/film-creation`；2026-09-06 用户暂定通过 UI，浏览器结果单独记录 | 所有者最新明确反馈 |
 | [通用模型设置](../product/model-settings.md) | 已按反馈调整；8 组聚焦浏览器检查通过，随后 UI 暂定通过 | 用户明确个人模型组合不能作为完整产品预设 |
-| [真实电影能力建设](../plans/capability-mvp.md) | 下一轮重点，已登记，尚未开始；已有接入授权按原用途沿用 | 用户要求将重点转到能力建设；产品与技术基线、首轮验证矩阵 |
+| [真实电影能力建设](../plans/capability-mvp.md) | 进行中，见[本轮实施](../plans/runtime-implementation.md)；真实分项已开始，整片与完整矩阵待验收 | 用户明确要求实施完整计划，包含真实调用、两次完整制作及修改 |
 
 ## 记录约定
 
