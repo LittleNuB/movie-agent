@@ -6,14 +6,14 @@
 
 ## 当前状态
 
-这是独立项目的文档初始化仓库，尚无应用代码、可运行前端或安装包，因此目前没有产品启动命令。
+文档初始化已完成。main 保留设计与任务记录；可点击原型已经制作，代码独立保存在 [prototype/film-creation 分支](https://github.com/LittleNuB/movie-agent/tree/prototype/film-creation)。电影 Agent 运行时、真实生成与安装包尚未实现。
 
 | 项目 | 状态 |
 |---|---|
 | 产品、交互、Windows 本地部署方向 | 已确认，具体行为见设计文档 |
 | AgentScope 首选框架与电影领域复用方向 | 已确认方向，实际集成待验证 |
 | 前端视觉 | A 日间、B 夜间已选定；静态示意图不代表可运行产品 |
-| 可点击原型 | 所有者已授权，下一项任务，尚未开始 |
+| 可点击原型 | 独立分支已实现；14 组浏览器检查通过，用户体验审阅待完成 |
 | 真实模型基础接入 | 旧工作区完成 GLM 工具回传与媒体只读查询；不是本仓库实测 |
 | 电影制作与质量验证 | 未实现，七组二十一个场景族尚未执行 |
 
@@ -25,7 +25,9 @@
 - [设计入口](./DESIGN.md)：当前已确认方向与剩余问题。
 - [项目术语](./CONTEXT.md)：统一理解剧本、素材、版本和授权。
 - [完整文档索引](./docs/README.md)：产品、架构、验证、研究与决定。
-- [下一项：可点击原型](./docs/plans/clickable-prototype.md)：已批准范围及验收标准。
+- [可点击原型](./docs/plans/clickable-prototype.md)：已批准范围、交付分支与下一步。
+- [原型启动与体验](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/prototype/README.md)：切换到原型分支后，按说明在本机运行。
+- [浏览器检查与截图](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/docs/validation/clickable-prototype-2026-09-06.md)：示例交互证据，不代表真实电影能力。
 - [配置示例](./.env.example)：未来接入所需配置的说明，当前没有读取它的运行程序。
 
 ## 仓库边界

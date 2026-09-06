@@ -1,6 +1,6 @@
 # 可点击原型 · 执行规格
 
-Status: authorized_not_started
+Status: implemented_pending_user_review
 
 Date: 2026-09-06
 
@@ -8,7 +8,7 @@ Date: 2026-09-06
 
 所有者已认可可点击原型制作，并明确要求开始前先建立 movie-agent 独立私有仓库、完成 AGENTS 等项目文档。仓库初始化完成后直接承接本任务，不再重复询问是否开始。
 
-本任务制作本地可操作的界面原型，使用明确标识的示例内容。当前文件是执行规格，原型尚未创建；后续启动方式和验证记录应在实际实现后补充。
+本任务制作本地可操作的界面原型，使用明确标识的示例内容。所有者在建仓后再次明确授权，现已实现于独立分支；main 保留任务与设计记录。下面保留执行规格，实际交付见末节。
 
 ## 目标与入口
 
@@ -50,3 +50,11 @@ Date: 2026-09-06
 - 如原型实现发现会改变已确认语义的问题，说明具体冲突；普通排版与可逆细节自行落实，不逐项要求用户表决。
 
 依据：[前端规格](../product/frontend-spec.md)、[创作交互](../product/creative-interaction.md)、[视觉参考](../assets/frontend-theme-comparison-2026-09-06.png)。
+
+## 交付指针 · 2026-09-06
+
+- 原型代码与使用说明：[prototype/film-creation 分支](https://github.com/LittleNuB/movie-agent/tree/prototype/film-creation/prototype)。该分支从文档基线 77a1cc0 开始，代码可整体舍弃，未合并为正式运行时。
+- 交付：本机静态服务、A／B 双主题、三栏与多标签作品、共创／托管、剧本提交快照、标注与历史版本、示例中止与异常沟通。仅使用示例凭据、预设回复及原创程序动画，无真实模型调用。
+- 证据：[浏览器检查与代表性截图](https://github.com/LittleNuB/movie-agent/blob/prototype/film-creation/docs/validation/clickable-prototype-2026-09-06.md)。14 组浏览器检查通过；Standards 与 Spec 各发现 1 项，已修复并复核关闭。
+- 待用户回答的问题：三栏对话与作品标签页，能否清楚表达草稿／提交／采用、标注／发送及共创授权？目前没有用户体验验收结论。
+- 下一步是用户操作与视觉审阅。真实电影运行时、模型接入和整片人评继续分别推进，不将原型状态结构冻结为正式 API、数据库 Schema 或 Agent 数量。
