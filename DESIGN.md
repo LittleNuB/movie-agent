@@ -14,7 +14,7 @@
 - 制作期间随时发消息，独立中止按钮；异常正常输出文字。页面关闭时本地服务仍运行则已授权制作继续，审核仍等待用户。
 - AgentScope 为首选框架；主导演持续对话、专业 Agent 按需协作、后台工具执行。四角色仅为比较基线，最终数量待验证。
 - ViMax 为电影领域代码起点，具体模块和运行时可替换；吸收 AdCraft 与 OpenMontage 的相应能力，允许舍弃旧工程。
-- GLM 5.3 Flash、Seedream 5.0 Pro、MiniMax H3 首选视频和 Seedance 2.0 标准版备选已选定；独立声音模型待选。
+- 产品不预设服务商或模型；用户通过连接、模型 ID 和用途分配配置。GLM 5.3 Flash、Seedream 5.0 Pro、H3 与 Seedance 2.0 是所有者个人使用及验证选择，详见 [ADR 0004](./docs/adr/0004-user-configured-models.md)。
 - 约 30 分钟与费用预期均非硬门槛。剧本是否有趣由人判断，正式评分属于产品评测。
 
 ## 详细规格与证据
@@ -24,6 +24,7 @@
 | [产品规格](./docs/product/product-spec.md) | 用户、目标、主流程、修改与交付 |
 | [创作交互](./docs/product/creative-interaction.md) | 提案、剧本、视觉、试拍、标注与声音 |
 | [前端规格](./docs/product/frontend-spec.md) | 页面、标签、模式、编辑审核、中止、部署与配置 |
+| [模型与 API 设置](./docs/product/model-settings.md) | 用户自定义连接、模型与用途；个人选型与产品预设的边界 |
 | [技术基线](./docs/architecture/technical-baseline.md) | 已选技术方向、模型／程序责任、待验证能力 |
 | [架构研究](./docs/architecture/architecture-review-2026-09-05.md) | 固定版本的源码观察与证据限制 |
 | [验证矩阵](./docs/validation/first-round-matrix.md) | 七组二十一个场景族及真实证据要求 |

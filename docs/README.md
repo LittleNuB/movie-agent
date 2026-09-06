@@ -10,6 +10,7 @@
 | [产品规格](./product/product-spec.md) | 目标用户、电影范围、创作修改与交付 |
 | [创作交互](./product/creative-interaction.md) | 提案、剧本、视觉、试拍、声音与 annotation |
 | [前端规格](./product/frontend-spec.md) | 三栏、主题、编辑审核、项目与版本、Windows 部署及配置 |
+| [模型与 API 设置](./product/model-settings.md) | 通用连接、用户自选模型与用途，产品默认不指定模型 |
 | [技术基线](./architecture/technical-baseline.md) | AgentScope 路线、职责试验、模型与程序分工、待接入事项 |
 | [架构研究记录](./architecture/architecture-review-2026-09-05.md) | 源码版本、可吸收能力及尚未证明的能力 |
 | [第三方来源](./architecture/third-party-sources.md) | 研究与后续代码复用的来源边界 |
