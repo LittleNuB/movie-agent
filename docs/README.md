@@ -22,7 +22,8 @@
 | 文档 | 状态与用途 |
 |---|---|
 | [任务记录](./agents/issue-tracker.md) | 本地文档任务入口，不自动创建 GitHub Issues |
-| [可点击原型规格](./plans/clickable-prototype.md) | 已实现，用户体验审阅待完成 |
+| [可点击原型规格](./plans/clickable-prototype.md) | 已实现；2026-09-06 用户暂定通过 UI |
+| [下一轮能力建设](./plans/capability-mvp.md) | 已登记，尚未开始；真实电影创作与修改 MVP |
 | [原型浏览器检查](./validation/clickable-prototype-2026-09-06.md) | 实际桌面交互结果与示例能力限制 |
 | [首轮验证矩阵](./validation/first-round-matrix.md) | 七组二十一个场景族，范围已确认，全部待执行 |
 | [历史模型基础接入](./validation/provider-preflight-2026-09-06.md) | 旧工作区 GLM 工具回传成功、媒体只读查询成功；不代表本仓库通过 |
