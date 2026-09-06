@@ -18,6 +18,8 @@
   .composer-help { text-align:center; color:var(--muted); font-size:10px; margin-top:9px; }
   .dialog-heading { display:flex; justify-content:space-between; align-items:center; padding:20px 24px 8px; }
   .dialog-body { padding:12px 24px 24px; }
+  .script-review-snapshot { padding:16px 24px; border-bottom:1px solid var(--border); overflow:auto; max-height:52%; flex:none; }
+  .script-review-snapshot h3 { margin:0 0 12px; }
   .api-dialog { width:min(940px,94vw); }
   .settings-tabs { display:flex; border-bottom:1px solid var(--border); gap:26px; margin-bottom:12px; }
   .settings-tabs button { border-bottom:2px solid transparent; font-size:12px; padding:7px 0 12px; color:var(--muted); }

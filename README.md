@@ -6,6 +6,8 @@
 
 产品不预设厂商或模型。设置采用“服务连接 → 模型 ID → 用途分配”；此前选定的 GLM、H3、Seedream、Seedance 是所有者个人使用与验证组合。详见[模型与 API 设置](./docs/product/model-settings.md)。
 
+后续按用户最新要求控制调用规格：**H3 生成 768P；Seedance 改用 2.0 Fast、生成 720P；成片导出 720P（16:9、1280×720）**。已有素材保留原规格并本地转换复用。这是本轮个人配置，产品仍不预填模型。见[最新规格](./docs/adr/0006-provider-resolution-and-seedance-fast.md)。
+
 ## 当前状态
 
 `feat/movie-runtime` 正在实现真实电影 MVP。已经接入 AgentScope、Windows 凭据管理器、后端事件、真实图片／视频／配音和 FFmpeg 后期。完整创作与修改验收仍在进行；不能把接口试拍当作两部整片已交付。原型分支 `prototype/film-creation` 保留作交互参照。
@@ -18,7 +20,7 @@
 | 可点击原型 | 已实现；2026-09-06 用户暂定通过 UI，浏览器检查单独记录 |
 | 本仓库真实接入 | GLM 流式工具及图片输入、Seedream 图像、H3 首帧与参考图视频、MiniMax 配音已取得产物 |
 | 配乐接入 | 已实现 MiniMax music-3.0 请求；当前验证账号被 HTTP 410 拒绝，尚无独立配乐产物 |
-| 电影制作与质量验证 | 首段真实试拍已合成；完整制作、修改、完整矩阵与人评仍在进行 |
+| 电影制作与质量验证 | 《回声频率》已有 91 秒影片与结尾修改前后版；共创第二部、配乐、完整矩阵与人评尚未完成 |
 
 约 30 分钟得到首条完整可看片、约 150–220 元/片均为未实测的目标预期，不是硬停止条件。电影质感参考《星际穿越》《挽救计划》《流浪地球2》，不宣称达到相同制作水准。
 
@@ -31,6 +33,7 @@
 - [可点击原型](./docs/plans/clickable-prototype.md)：已批准范围及实际交付。
 - [能力建设范围](./docs/plans/capability-mvp.md)及[实施记录](./docs/plans/runtime-implementation.md)：真实导演、声画生成、成片和修改，正在实施。
 - [真实运行使用说明](./docs/runtime-guide.md)：Windows 启动、模型配置、创作和恢复。
+- [真实运行验证记录](./docs/validation/runtime-evidence-2026-09-06.md)：实际产物、已发现问题、21 个场景族状态与费用边界。
 - [原型使用说明](./prototype/README.md)：启动、体验路径与示例边界。
 - [配置示例](./.env.example)：未来接入所需配置的说明，当前没有读取它的运行程序。
 

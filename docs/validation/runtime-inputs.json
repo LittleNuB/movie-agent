@@ -9,8 +9,8 @@
     {"id":"dev-dialogue","input":"风暴即将覆盖火星站，站长想关闭无人舱，学徒通过无线电说里面还有一只实验鼠。这句话改变站长行动。保留人物清晰口型片段，以便验证台词和声线修改。"}
   ],
   "heldout": [
-    {"id":"holdout-co","mode":"co","input":"一位退休的月球灯塔管理员准备关闭最后一盏导航灯，却发现每晚有一艘无人货船按旧时刻表经过。她最终把灯改成让地球上的孩子能看到的微小信号。90到120秒，克制、温暖，月面尺度宏大但人物动作要细腻，不使用牺牲结局。","used_for_tuning":false,"execution":"not_started"},
-    {"id":"holdout-auto","mode":"auto","input":"请全权制作一部90到120秒科幻短片。土星环采冰船上，一对父女发现封在古冰中的微型机械会对敲击回应。父亲想把样本送去鉴定，女儿却用节奏发现它只是想找到同伴。结尾两台小机器在窗前同步闪光。要有质感、可理解的动作和声音，不靠长旁白解释，也不拍成广告。","used_for_tuning":false,"execution":"not_started"}
+    {"id":"holdout-co","mode":"co","input":"一位退休的月球灯塔管理员准备关闭最后一盏导航灯，却发现每晚有一艘无人货船按旧时刻表经过。她最终把灯改成让地球上的孩子能看到的微小信号。90到120秒，克制、温暖，月面尺度宏大但人物动作要细腻，不使用牺牲结局。","used_for_tuning":false,"execution":"waiting_user_proposal_review","project_id":"b630f132370b48ad89186ef065ba812d"},
+    {"id":"holdout-auto","mode":"auto","input":"请全权制作一部90到120秒科幻短片。土星环采冰船上，一对父女发现封在古冰中的微型机械会对敲击回应。父亲想把样本送去鉴定，女儿却用节奏发现它只是想找到同伴。结尾两台小机器在窗前同步闪光。要有质感、可理解的动作和声音，不靠长旁白解释，也不拍成广告。","used_for_tuning":true,"tuning_reason":"Developer interventions corrected task failure classification, model selection and audio reuse; no longer a clean heldout run","execution":"development_film_and_edit_complete_human_review_pending","project_id":"36e5435a57144156aaa5b33a266cac95","before_film_id":"befbf19903d7430a940f6d0c0d678624","after_film_id":"43c64984f2dd4895ace88c3306876bd9"}
   ],
   "note":"这些是验证输入，不是产品预设故事。保留输入一旦用于修改提示或流程，必须改记为已用于调试。"
 }

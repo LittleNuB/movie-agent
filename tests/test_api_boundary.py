@@ -53,3 +53,18 @@ def test_messages_are_idempotent_and_annotations_keep_source_time(tmp_path):
         assert snapshot["jobs"] == []
         assert len(app.state.store.records(pid, "inputs")) == 1
         assert client.post(f"/api/projects/{pid}/messages", json={**msg, "text": "Changed"}).status_code == 409
+
+
+def test_accepted_message_survives_before_runtime_delivery(tmp_path):
+    app = create_app(tmp_path, vault=MemoryVault(), enable_runtime=False)
+    store = app.state.store
+    pid = store.create_project()["id"]
+    store.accept_message(pid, "crash-window", "Keep this input", [])
+    # No runtime delivery happened. Reopening the database must find both records.
+    reopened = type(store)(tmp_path)
+    assert reopened.record("crash-window")["text"] == "Keep this input"
+    assert reopened.record("input-crash-window")["status"] == "pending"
+    with TestClient(app, base_url="http://127.0.0.1:4318") as client:
+        response = client.post(f"/api/projects/{pid}/messages", json={"client_id": "crash-window", "text": "Keep this input"})
+        assert response.status_code == 200
+        assert len(store.records(pid, "inputs")) == 1

@@ -15,6 +15,7 @@
 - AgentScope 为首选框架；主导演持续对话、专业 Agent 按需协作、后台工具执行。四角色仅为比较基线，最终数量待验证。
 - ViMax 为电影领域代码起点，具体模块和运行时可替换；吸收 AdCraft 与 OpenMontage 的相应能力，允许舍弃旧工程。
 - 产品不预设服务商或模型；用户通过连接、模型 ID 和用途分配配置。GLM 5.3 Flash、Seedream 5.0 Pro、H3 与 Seedance 2.0 是所有者个人使用及验证选择，详见 [ADR 0004](./docs/adr/0004-user-configured-models.md)。
+- 后续 H3 生成 768P，个人 Seedance 选择改为 2.0 Fast、生成 720P；成片统一导出 720P。已有素材保留并本地转换复用。此项替代初始 1080p 输出及随后统一 720P 生成要求，见 [ADR 0006](./docs/adr/0006-provider-resolution-and-seedance-fast.md)。
 - 约 30 分钟与费用预期均非硬门槛。剧本是否有趣由人判断，正式评分属于产品评测。
 
 ## 详细规格与证据

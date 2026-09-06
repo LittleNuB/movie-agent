@@ -23,9 +23,12 @@
 |---|---|
 | [任务记录](./agents/issue-tracker.md) | 本地文档任务入口，不自动创建 GitHub Issues |
 | [可点击原型规格](./plans/clickable-prototype.md) | 已实现；2026-09-06 用户暂定通过 UI |
-| [下一轮能力建设](./plans/capability-mvp.md) | 已登记，尚未开始；真实电影创作与修改 MVP |
+| [能力建设范围](./plans/capability-mvp.md) | 已获实施授权，真实电影创作与修改 MVP 进行中 |
+| [实施进度](./plans/runtime-implementation.md) | 代码、真实接入与阶段交付状态 |
+| [Windows 运行指南](./runtime-guide.md) | 4318 真实服务、模型设置与恢复 |
+| [真实运行证据](./validation/runtime-evidence-2026-09-06.md) | 真实产物、24 个 LLM 用例、控制与浏览器检查、尚未完成项 |
 | [原型浏览器检查](./validation/clickable-prototype-2026-09-06.md) | 实际桌面交互结果与示例能力限制 |
-| [首轮验证矩阵](./validation/first-round-matrix.md) | 七组二十一个场景族，范围已确认，全部待执行 |
+| [首轮验证矩阵](./validation/first-round-matrix.md) | 七组二十一个场景族，范围已确认，执行中 |
 | [历史模型基础接入](./validation/provider-preflight-2026-09-06.md) | 旧工作区 GLM 工具回传成功、媒体只读查询成功；不代表本仓库通过 |
 | [仓库初始化验收](./validation/repository-initialization-2026-09-06.md) | 本次文档、来源保护和提交检查的实际结果 |
 | [配置示例](../.env.example) | 不含凭据，目前无运行程序加载 |

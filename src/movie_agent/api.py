@@ -36,6 +36,7 @@ class MessageInput(BaseModel):
 class DraftInput(BaseModel):
     text: str = Field(max_length=100000)
     expected_revision: int = Field(ge=0)
+    source_artifact_id: str | None = None
 
 
 class RevisionInput(BaseModel):
@@ -178,27 +179,14 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
 
     @app.post("/api/projects/{pid}/messages")
     async def message(pid: str, body: MessageInput):
-        prior = next((m for m in store.records(pid, "messages") if m["id"] == body.client_id), None)
-        if prior:
-            if prior["text"] != body.text or prior.get("annotation_ids", []) != body.annotation_ids:
-                raise Conflict("同一消息身份不能重复用于不同输入")
-            return prior
-        annotations = [store.record(aid, pid, "annotations") for aid in body.annotation_ids]
-        if any(a.get("removed") or a.get("submitted_message_id") for a in annotations):
-            raise ValueError("标注身份不正确")
-        text = body.text
-        if annotations:
-            text += "\n本次一起提交的时间点标注：\n" + json.dumps(annotations, ensure_ascii=False)
-        msg = store.put_record(pid, "messages", {"role": "user", "text": body.text,
-            "annotation_ids": body.annotation_ids}, body.client_id)
-        for item in annotations:
-            store.update_record(item["id"], submitted_message_id=body.client_id)
-        await runtime.notify(pid, text, source="user", input_id="input-" + body.client_id)
+        msg = store.accept_message(pid, body.client_id, body.text, body.annotation_ids)
+        entry = store.record("input-" + body.client_id, pid, "inputs")
+        await runtime.notify(pid, entry["text"], source="user", input_id=entry["id"])
         return msg
 
     @app.put("/api/projects/{pid}/draft")
     async def save_draft(pid: str, body: DraftInput):
-        return store.save_draft(pid, body.text, body.expected_revision)
+        return store.save_draft(pid, body.text, body.expected_revision, body.source_artifact_id)
 
     @app.post("/api/projects/{pid}/draft/submit")
     async def submit_draft(pid: str, body: RevisionInput):
@@ -216,8 +204,9 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
 
     @app.put("/api/projects/{pid}/mode")
     async def mode(pid: str, body: ModeInput):
-        p = store.update_project(pid, mode=body.mode)
-        await runtime.notify(pid, f"用户将当前授权模式明确改为 {body.mode}。按新范围处理后续动作，保留已有作品和批准。", source="user_mode")
+        delivery = ("mode-" + uid(), f"用户将当前授权模式明确改为 {body.mode}。按新范围处理后续动作，保留已有作品和批准。", "user_mode")
+        p = store.update_project(pid, mode=body.mode, delivery=delivery)
+        await runtime.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
         return p
 
     @app.post("/api/projects/{pid}/stop")
@@ -228,8 +217,9 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
 
     @app.post("/api/projects/{pid}/resume")
     async def resume(pid: str):
-        store.update_project(pid, production_paused=False, status="idle")
-        await runtime.notify(pid, "用户点击继续制作，请先查看保留的任务和候选，再继续未完成工作。", source="user_resume")
+        delivery = ("resume-" + uid(), "用户点击继续制作，请先查看保留的任务和候选，再继续未完成工作。", "user_resume")
+        store.update_project(pid, production_paused=False, status="idle", delivery=delivery)
+        await runtime.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
         return store.project(pid)
 
     @app.post("/api/projects/{pid}/annotations")
@@ -266,8 +256,9 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
         artifact = store.record(body.artifact_id, pid, "artifacts")
         if artifact["kind"] not in {"film", "trial"}:
             raise ValueError("历史采用用于作品版本；剧本和视觉决定请通过审核提交")
-        p = store.adopt(pid, body.artifact_id, body.expected)
-        await runtime.notify(pid, f"用户明确采用历史版本 {body.artifact_id} 作为继续创作的依据。当前手改草稿须保留，先讨论下一步。", source="user_adopt")
+        delivery = ("adopt-" + uid(), f"用户明确采用历史版本 {body.artifact_id} 作为继续创作的依据。当前手改草稿须保留，先讨论下一步。", "user_adopt")
+        p = store.adopt(pid, body.artifact_id, body.expected, restore_basis=True, delivery=delivery)
+        await runtime.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
         return p
 
     @app.post("/api/projects/{pid}/jobs/{jid}/recover")

@@ -16,9 +16,11 @@ PROTOCOLS = {"openai": "OpenAI 兼容", "ark": "火山方舟图片／视频",
 CAPABILITIES = {
     "openai": {"implemented": ["text", "vision", "image_text"], "discovery": "models", "cancel": False},
     "ark": {"implemented": ["image_text", "image_reference", "video_text", "video_first_last", "video_reference"],
-            "discovery": "models", "video_seconds": [5, 15], "cancel": False},
+            "discovery": "models", "video_seconds": [5, 15], "resolutions": ["720p", "1080p"], "cancel": False},
     "minimax_video": {"implemented": ["video_text", "video_first_last", "video_reference"],
-                      "discovery": "tasks_read_only", "video_seconds": [5, 15], "resolutions": ["2K", "768P"], "cancel": False},
+                      "discovery": "tasks_read_only", "cancel": False,
+                      "model_limits": {"MiniMax-H3": {"video_seconds": [4, 15], "resolutions": ["2K", "768P"], "multimodal_reference": True},
+                                       "MiniMax-H3-Max": {"video_seconds": [5, 15], "resolutions": ["480P", "768P"], "multimodal_reference": False}}},
     "minimax_audio": {"implemented": ["voice_system", "music_instrumental"], "discovery": "system_voices", "cancel": False},
     "custom": {"implemented": [], "discovery": None, "cancel": False},
 }
@@ -106,7 +108,19 @@ class Configuration:
         for c in config["connections"]:
             c["has_key"] = bool(self.vault.get(c["id"]))
         return {**config, "protocols": PROTOCOLS, "purposes": PURPOSES, "capabilities": CAPABILITIES,
+                "production": {"generation_resolutions": {"minimax_video": "768P", "ark": "720p"},
+                               "export_resolution": "720p", "export_width": 1280, "export_height": 720},
                 "generation_checks": self.store.setting("generation_checks", {})}
+
+    @staticmethod
+    def video_parameters(parameters, binding=None):
+        """Current production specification, checked before any new paid video POST."""
+        parameters = dict(parameters)
+        expected = "768P" if binding and binding.protocol == "minimax_video" else "720p"
+        if str(parameters.get("resolution", expected)).lower() != expected.lower():
+            raise ValueError(f"当前所选接口的生成规格为{expected.upper()}，请调整镜头参数；不会自动提交其他分辨率的视频")
+        parameters["resolution"] = expected
+        return parameters
 
     def save(self, value: ConnectionInput):
         data = self.store.setting("models", {"connections": [], "assignments": {}})

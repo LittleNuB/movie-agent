@@ -30,6 +30,7 @@ class Runtime:
         self.closing = False
         self.waker = None
         self.specialists = {}
+        self.queued_inputs = set()
 
     async def start(self):
         logging.getLogger("agentscope").setLevel(logging.WARNING)
@@ -37,6 +38,9 @@ class Runtime:
         await self.bus.__aenter__()
         # Durable input records, not the in-memory bus, own restart recovery.
         for project in self.store.projects():
+            for run in self.store.records(project["id"], "runs"):
+                if run["role"] in {"director", "visual_evidence"} and run["status"] == "running":
+                    self.store.update_record(run["id"], status="interrupted", interruption="service_restart")
             for entry in self.store.records(project["id"], "inputs"):
                 if entry["status"] in {"pending", "processing"}:
                     self.store.update_record(entry["id"], status="pending")
@@ -44,7 +48,7 @@ class Runtime:
         self.waker = asyncio.create_task(self._wake_loop())
         for project in self.store.projects():
             for run in self.store.records(project["id"], "runs"):
-                if run["role"] != "director" and run["status"] in {"pending", "running"}:
+                if run["role"] in {"visual", "post", "check"} and run["status"] in {"pending", "running"}:
                     self.specialists[run["id"]] = asyncio.create_task(self._specialist(run))
 
     async def close(self):
@@ -69,6 +73,8 @@ class Runtime:
         if existing:
             if existing.get("text") != text:
                 raise ValueError("同一消息身份不能用于不同内容")
+            if existing["status"] == "pending":
+                await self._push(project_id, existing)
             return existing
         entry = self.store.put_record(project_id, "inputs", {"text": text, "source": source, "status": "pending"},
                                       record_id=entry_id)
@@ -76,21 +82,36 @@ class Runtime:
         return entry
 
     async def _push(self, project_id, entry):
+        if not self.deliverable(project_id, entry):
+            return
+        if entry["id"] in self.queued_inputs:
+            return
         hint = HintBlock(id=entry["id"], source=entry["source"], hint=entry["text"])
         await self.bus.queue_push(MessageBusKeys.inbox(project_id), hint.model_dump(mode="json"))
+        self.queued_inputs.add(entry["id"])
         await self.wake(project_id)
 
     async def wake(self, project_id):
         await self.bus.queue_push(MessageBusKeys.wakeup_queue(), {"session_id": project_id})
 
+    def deliverable(self, project_id, entry):
+        return not (self.store.project(project_id).get("production_paused") and entry["source"] in {"media_task", "specialist"})
+
     async def _wake_loop(self):
         while not self.closing:
+            # Recover the commit-to-bus window without restarting or re-running an external call.
+            for project in self.store.projects():
+                for entry in self.store.records(project["id"], "inputs"):
+                    if entry["status"] == "pending":
+                        await self._push(project["id"], entry)
             for _, wake in await self.bus.queue_drain(MessageBusKeys.wakeup_queue(), max_count=64):
                 pid = wake["session_id"]
                 if pid in self.running and not self.running[pid].done():
                     continue
+                if not any(e["status"] == "pending" and self.deliverable(pid, e) for e in self.store.records(pid, "inputs")):
+                    continue
                 self.running[pid] = asyncio.create_task(self._run(pid))
-            await asyncio.sleep(0.15)
+            await asyncio.sleep(0.5)
 
     def model(self, purpose="director"):
         binding = self.config.binding(purpose)
@@ -110,7 +131,13 @@ class Runtime:
         sid = session_id or project_id
         saved = await self.sessions.get_session("local", role, sid)
         state = saved.state if saved else AgentState(session_id=sid)
-        tools = self.tool_factory(project_id, role)
+        if role == "director":
+            tools = self.tool_factory(project_id, role)
+        else:
+            run = self.store.record(sid, project_id, "runs")
+            if "basis" not in run and run["epoch"] != self.store.project(project_id)["epoch"]:
+                raise ValueError("旧专业任务缺少原始依据，需导演重新委派；不能冒用当前版本")
+            tools = self.tool_factory(project_id, role, run.get("basis", self.store.project(project_id)["adopted"]))
         for tool in tools:
             state.permission_context.allow_rules[tool.name] = [PermissionRule(
                 tool_name=tool.name, rule_content=None, behavior=PermissionBehavior.ALLOW,
@@ -130,6 +157,8 @@ class Runtime:
         message_id = uid()
         text = ""
         received = set()
+        attempted = {e["id"] for e in self.store.records(project_id, "inputs")
+                     if e["status"] == "pending" and self.deliverable(project_id, e)}
         run = self.store.put_record(project_id, "runs", {"role": "director", "status": "running",
                                                          "input_tokens": 0, "output_tokens": 0})
         try:
@@ -146,6 +175,7 @@ class Runtime:
                     text += event.delta
                     self.store.event(project_id, "text_delta", {"id": message_id, "delta": event.delta})
                 elif kind == "hint_block":
+                    self.queued_inputs.discard(event.block_id)
                     try:
                         self.store.update_record(event.block_id, status="processing")
                         received.add(event.block_id)
@@ -186,7 +216,7 @@ class Runtime:
                 pass
             self.store.update_record(run["id"], status="failed", error_type=type(exc).__name__)
             for entry in self.store.records(project_id, "inputs"):
-                if entry["status"] in {"pending", "processing"}:
+                if entry["id"] in (received or attempted) and entry["status"] in {"pending", "processing"}:
                     self.store.update_record(entry["id"], status="failed")
         finally:
             self.agents.pop(project_id, None)
@@ -196,20 +226,25 @@ class Runtime:
                 status = "stopped" if p.get("production_paused") else "waiting_review" if waiting else "idle"
                 self.store.update_project(project_id, status=status)
             # Inputs arriving at the final model step still get their own next turn.
-            pending = [e for e in self.store.records(project_id, "inputs") if e["status"] == "pending"]
+            pending = [e for e in self.store.records(project_id, "inputs") if e["status"] == "pending" and self.deliverable(project_id, e)]
             if pending and not self.closing:
                 await self.wake(project_id)
 
-    async def delegate(self, project_id, role, task):
+    async def delegate(self, project_id, role, task, basis=None):
         if role not in {"visual", "post", "check"}:
             raise ValueError("请选择 visual、post 或 check 专业职责")
         if self.store.setting("single_agent", False):
             return {"message": "当前为单 Agent 对照模式；请主导演使用相同工具直接处理此任务。"}
+        current_basis = self.store.project(project_id)["adopted"]
+        basis = dict(current_basis if basis is None else basis)
+        if basis != current_basis:
+            raise ValueError("委派所依据的采用版本已改变，请先重新读取项目、理解新决定再交办")
         for run in self.store.records(project_id, "runs"):
-            if run["role"] == role and run.get("task") == task and run["status"] in {"pending", "running"}:
+            if run["role"] == role and run.get("task") == task and run.get("basis") == basis and run["status"] in {"pending", "running"}:
                 return {"role": role, "run_id": run["id"], "status": run["status"]}
         run = self.store.put_record(project_id, "runs", {"role": role, "task": task, "status": "pending",
-            "input_tokens": 0, "output_tokens": 0, "epoch": self.store.project(project_id)["epoch"]})
+            "input_tokens": 0, "output_tokens": 0, "epoch": self.store.project(project_id)["epoch"],
+            "basis": basis})
         self.specialists[run["id"]] = asyncio.create_task(self._specialist(run))
         return {"role": role, "run_id": run["id"], "status": "pending",
                 "message": "专业任务已交办，结果会进入导演收件箱。现在可继续与用户交流。"}
@@ -237,18 +272,23 @@ class Runtime:
                 elif kind in {"tool_call_end", "tool_result_end"}:
                     await self.persist_agent(agent, pid)
             await self.persist_agent(agent, pid)
-            self.store.update_record(rid, status="completed", result=text)
+            delivery = ("specialist-" + rid, f"专业任务 {rid}（{run['role']}）已返回：{text}", "specialist")
+            self.store.update_record(rid, status="completed", result=text, delivery=delivery)
             if not self.store.project(pid).get("production_paused"):
-                await self.notify(pid, f"专业任务 {rid}（{run['role']}）已返回：{text}",
-                                  source="specialist", input_id="specialist-" + rid)
+                await self.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
         except asyncio.CancelledError:
             if agent:
                 await self.persist_agent(agent, pid)
             self.store.update_record(rid, status="pending" if self.closing else "interrupted", result=text)
         except Exception as exc:  # noqa: BLE001 -- retain partial work and sanitized failure
-            self.store.update_record(rid, status="failed", error_type=type(exc).__name__, result=text)
+            # A completed result already has a durable delivery; a bus failure must not turn it into failed work.
+            if self.store.record(rid)["status"] == "completed":
+                return
+            delivery = ("specialist-failed-" + rid,
+                        f"专业任务 {rid} 失败（{type(exc).__name__}）；已有产物仍保留，请先查看项目再决定修复。", "specialist")
+            self.store.update_record(rid, status="failed", error_type=type(exc).__name__, result=text, delivery=delivery)
             if not self.closing and not self.store.project(pid).get("production_paused"):
-                await self.notify(pid, f"专业任务 {rid} 失败（{type(exc).__name__}）；已有产物仍保留，请先查看项目再决定修复。", source="specialist")
+                await self.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
 
     async def stop(self, project_id):
         self.store.stop(project_id)
