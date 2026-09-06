@@ -4,6 +4,8 @@
 
 首版计划支持 Windows 本地个人部署，通过浏览器使用。Agent、项目和版本保存在本机，模型推理与媒体生成调用云端 API；用户自行准备模型 API Key，通过设置页配置和检查连接。
 
+产品不预设厂商或模型。设置采用“服务连接 → 模型 ID → 用途分配”；此前选定的 GLM、H3、Seedream、Seedance 是所有者个人使用与验证组合。详见[模型与 API 设置](./docs/product/model-settings.md)。
+
 ## 当前状态
 
 文档初始化已完成。main 保留设计与任务记录；可点击原型已经制作，代码独立保存在 [prototype/film-creation 分支](https://github.com/LittleNuB/movie-agent/tree/prototype/film-creation)。电影 Agent 运行时、真实生成与安装包尚未实现。
