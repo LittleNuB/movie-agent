@@ -53,7 +53,7 @@ export function createProject(title, mode = 'co') {
     messages: [], proposal, draftScript: script, appliedScript: '', scriptAvailable: false,
     visualReady: false, versions: [], adoptedId: null, pending: null,
     tabs: [], activeTab: null, workOpen: false, manuallyClosed: false,
-    composer: '', annotations: [], playheads: {}, draftBackups: [], task: null,
+    composer: '', annotations: [], playheads: {}, draftBackups: [], task: null, pausedTask: null,
   };
 }
 
@@ -82,7 +82,7 @@ export function initialState() {
     user('我想拍一个宇宙里很小的故事。一个人等一束迟来的光，安静一点，最后有一点希望。'),
     director('我们把故事落在一位母亲的选择上：她要放弃的东西越具体，最后的那一点光才越有分量。提案、剧本和视觉方向都可以在作品里查看。', { assets: ['proposal', 'script', 'visual'] }),
     user('我想让这个片段更安静一些。'),
-    director('我保留了环境声，让音乐在最后进入。镜头多停留了一会儿，把等待的时间留给她。', { assets: ['video'] }),
+    director('我保留了环境声，让音乐在最后进入。镜头多停留了一会儿，把等待的时间留给她。', { assets: ['video'], versionId: v2.id }),
   ];
   makeReview(p, 'trial', '这版先看画面停留和声音进入的节奏。你认可后，我会沿着这个方向完成影片。', { versionId: v2.id });
   openTab(p, 'script'); openTab(p, 'visual'); openTab(p, 'video', v2.id);
@@ -95,7 +95,14 @@ export function initialState() {
 export function load() {
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (value?.schema === 1 && Array.isArray(value.projects)) return value;
+    if (value?.schema === 1 && Array.isArray(value.projects)) {
+      // Migrate only the known initial sample message; never guess a history link
+      // from whichever version is currently adopted.
+      for (const p of value.projects) for (const m of p.messages) {
+        if (!m.versionId && m.assets?.includes('video') && m.text === '我保留了环境声，让音乐在最后进入。镜头多停留了一会儿，把等待的时间留给她。') m.versionId = p.versions.find(v => v.number === 2)?.id;
+      }
+      return value;
+    }
   } catch { /* A broken or unavailable browser store must not prevent opening the demo. */ }
   return initialState();
 }

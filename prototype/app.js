@@ -82,7 +82,7 @@ function renderMessage(p, m) {
   const r = m.review; const active = r && p.pending?.id === r.id;
   return `<article class="message director ${fresh}"><div class="director-byline"><span class="director-avatar">${icon('logo')}</span>导演</div>
     <div class="message-text">${esc(m.text)}</div>
-    ${m.assets ? `<div class="artifact-links">${m.assets.map(kind=>`<button class="artifact-link" data-action="asset" data-kind="${kind}" data-id="${kind==='video'?m.versionId || p.adoptedId || '':''}">${icon(kind==='proposal'?'script':kind==='visual'?'image':kind==='video'?'film':kind)}${assetName(kind)} ${icon('right')}</button>`).join('')}</div>`:''}
+    ${m.assets ? `<div class="artifact-links">${m.assets.filter(kind=>kind!=='video'||version(p,m.versionId)).map(kind=>`<button class="artifact-link" data-action="asset" data-kind="${kind}" data-id="${kind==='video'?m.versionId:''}">${icon(kind==='proposal'?'script':kind==='visual'?'image':kind==='video'?'film':kind)}${assetName(kind)} ${icon('right')}</button>`).join('')}</div>`:''}
     ${r?`<div class="review" data-review="${r.id}"><div class="review-top"><strong>${reviewName(p,r)}</strong><span class="review-state">${active?'等你确认':'已处理或已替代'}</span></div>
       <p>${r.kind==='revision'?(r.scope==='audio'?'只调整示例声音方向，保留当前画面。':'按本次提交的内容更新示例版本，保留已有作品。'):'查看对应内容后，可以确认继续，也可以直接在对话里说修改意见。'}</p>
       <div class="review-actions"><button class="button" data-action="review-view" data-id="${r.id}">${icon('script')}查看内容</button><button class="button primary" data-action="approve" data-id="${r.id}" ${active?'':'disabled'}>确认并继续 ${icon('right')}</button></div></div>`:''}</article>`;
@@ -153,8 +153,9 @@ function openAsset(kind,id='') { const p=pNow(); if(!p) return; openTab(p,kind,i
 function touch(p) { p.updated=Date.now(); }
 
 // Demo flow: small, explicit state transitions. These do not implement a director model.
+const phaseOf = p => p.pending?.kind==='trial'||p.pending?.reviewAfter==='trial' ? 'trial' : p.task?.phase || p.pausedTask?.phase || p.stage;
 function task(p,kind,plan={}) {
-  p.pending=null; p.task={id:uid(),kind,status:'running',due:Date.now()+(kind==='film'||kind==='revision'?12000:5500),plan};
+  const phase=phaseOf(p); p.pending=null; p.task={id:uid(),kind,phase,status:'running',due:Date.now()+(kind==='film'||kind==='revision'?12000:5500),plan}; p.pausedTask=null;
   p.messages.push(director(`我会${kind==='visual'?'先准备人物与场景的视觉方向':kind==='trial'?'准备一段代表性试拍':kind==='film'?'继续完成影片':plan.scope==='audio'?'按方案调整声音，保留画面':'按确认的方案调整作品'}。你可以继续发消息，也可以中止。（本次为示例制作演示。）`)); touch(p);
 }
 function maybeDelegated(p) {
@@ -182,16 +183,17 @@ function approve(p,id) {
 
 function finishTask(p) {
   const t=p.task; p.task=null;
-  if(t.status==='stopping') { p.stage='stopped'; p.messages.push(director('示例制作已停止。对话、手改稿和已有作品都保留了。你可以先看一看，再告诉我是否继续。这里没有外部生成任务需要取消。')); return; }
+  if(t.status==='stopping') { p.pausedTask=t; p.stage='stopped'; p.messages.push(director('示例制作已停止。对话、手改稿和已有作品都保留了。你可以先看一看，再告诉我是否继续。这里没有外部生成任务需要取消。')); return; }
   if(t.kind==='visual') {
     p.visualReady=true; p.stage='visual'; makeReview(p,'visual','我把人物放回她实际所在的舱内：冷色环境、灰色服装，只留台灯与日出的暖光。请看外观与场景气质，确认后进入试拍。'); openTab(p,'visual','',false);
   } else {
     const base=version(p,t.plan.baseId)||version(p,p.adoptedId);
     if(t.kind==='revision') applySnapshot(p,t.plan.snapshot);
-    const v={id:uid(),number:Math.max(0,...p.versions.map(v=>v.number))+1,title:t.kind==='trial'?'试拍':'影片',note:t.kind==='trial'?'人物与环境的首次动态试拍':t.kind==='revision'?(t.plan.scope==='audio'?'根据声音反馈调整示例方向，沿用原画面':'根据本次方案更新示例作品'):'完成示例影片，保持已确认的声画方向',script:p.appliedScript||p.draftScript,created:stamp(),treatment:t.plan.scope==='audio'?'quiet':base?.treatment||'quiet',parentId:base?.id};
+    const isTrial=t.kind==='trial'||t.plan.reviewAfter==='trial';
+    const v={id:uid(),number:Math.max(0,...p.versions.map(v=>v.number))+1,title:isTrial?'试拍':'影片',note:t.kind==='trial'?'人物与环境的首次动态试拍':t.kind==='revision'?(t.plan.scope==='audio'?'根据声音反馈调整示例方向，沿用原画面':'根据本次方案更新示例作品'):'完成示例影片，保持已确认的声画方向',script:p.appliedScript||p.draftScript,created:stamp(),treatment:t.plan.scope==='audio'?'quiet':base?.treatment||'quiet',parentId:base?.id};
     p.versions.push(v); p.adoptedId=v.id; p.playheads[v.id]=0;
     p.messages.push(director(`第 ${v.number} 版示例已准备好。${t.kind==='revision'?'原来的版本和未提交的手改稿仍然保留。':'可以打开预览，把需要调整的位置标注给我。'}`,{assets:['video'],versionId:v.id}));
-    if(t.kind==='trial') { p.stage='trial'; makeReview(p,'trial','请结合画面和声音看一遍。你认可后，我会继续完成影片。',{versionId:v.id}); }
+    if(isTrial) { p.stage='trial'; makeReview(p,'trial','请结合画面和声音看一遍。你认可后，我会继续完成影片。',{versionId:v.id}); }
     else p.stage='finished';
     openTab(p,'video',v.id,false);
   }
@@ -200,9 +202,11 @@ function finishTask(p) {
 
 function submitScript(p) {
   if(!p?.scriptAvailable) return;
+  const phase=phaseOf(p);
   if(p.task) { p.task=null; p.messages.push(director('收到新改稿，这轮示例制作先停在已有版本。接下来按本次提交讨论修改方案。')); }
   p.messages.push(user('请理解并应用我刚提交的剧本修改。'));
-  makeReview(p,'revision','我收到这份改稿了。建议先按提交内容更新制作稿，再检查相关画面和声音的衔接。此原型展示理解、建议与确认的流程；实际修改范围将由接入后的导演判断。',{scope:'story',snapshot:p.draftScript,baseId:p.adoptedId});
+  p.pausedTask=null;
+  makeReview(p,p.versions.length?'revision':'script','我收到这份改稿了。建议先按提交内容更新制作稿，再检查相关画面和声音的衔接。此原型展示理解、建议与确认的流程；实际修改范围将由接入后的导演判断。',{scope:'story',snapshot:p.draftScript,baseId:p.adoptedId,reviewAfter:phase==='trial'?'trial':undefined});
   maybeDelegated(p); touch(p); commitRender({bottom:true});
 }
 
@@ -233,15 +237,25 @@ function send(singleId) {
   if(!refs.length&&/^(请)?(提交修改|应用改稿|应用剧本修改)[。！!]?$/u.test(text)) { submitScript(p); return; }
   if(!refs.length&&/^(同意|确认|认可|确认并继续|继续|可以)[。！!]?$/u.test(text)) {
     if(p.pending) approve(p,p.pending.id);
-    else if(['stopped','failed'].includes(p.stage)) task(p,p.versions.length?'film':'visual',{baseId:p.adoptedId});
+    else if(['stopped','failed'].includes(p.stage)) {
+      if(p.pausedTask) task(p,p.pausedTask.kind,p.pausedTask.plan);
+      else if(!p.scriptAvailable) makeReview(p,'proposal','先继续这份示例提案。认可故事方向后，再展开剧本。',{snapshot:p.proposal});
+      else if(!p.visualReady) makeReview(p,'script','先确认这份剧本，再准备人物与场景的视觉方向。',{snapshot:p.draftScript});
+      else task(p,p.versions.length?'film':'trial',{baseId:p.adoptedId});
+    }
     else p.messages.push(director(p.task?'这轮示例正在制作，消息已经收到了。你可以展开进展，或打开现有作品。':'这轮示例已完成。你可以查看作品，或告诉我想修改哪里。'));
   } else if(!refs.length&&/^(停止|中止|停一下)[。！!]?$/u.test(text)) requestStop(p);
   else if(!refs.length&&/(进度|多久|在做什么)/u.test(text)) p.messages.push(director(p.task?'这轮示例还在制作中，已经完成的作品可以随时打开。本页用短计时演示等待，不代表真实制作速度。':'目前没有运行中的示例任务。已有作品和草稿都保存在这个项目里。'));
   else {
+    const phase=['proposal','script','visual'].includes(p.pending?.kind)?p.pending.kind:phaseOf(p);
     if(p.task) { p.task=null; p.messages.push(director('我先暂停这轮示例制作，保留已有结果，和你确认新的修改方向。')); }
+    p.pausedTask=null;
     const content=[text,...refs.map(a=>a.text)].join(' ');
     const scope=/(音乐|配乐|环境声|音量)/u.test(content)&&!/(台词|对白|口型|剧情|剧本|画面|镜头)/u.test(content)?'audio':'story';
-    makeReview(p,'revision',scope==='audio'?'我理解你想把声音再收一点。建议沿用画面，让配乐更晚进入，并把环境声留在前面。你确认后，我会按这个方向推进。':'我收到了这些想法。建议把这轮意见作为一次完整修改，保留当前作品作对照，再检查故事、画面和声音是否需要一起变化。这是示例修改建议，尚未调用导演模型。',{scope,baseId:refs[0]?.versionId || p.adoptedId,refs:refs.map(a=>({...a})),feedback:text});
+    if(['proposal','script','visual'].includes(phase)&&!p.versions.length) {
+      p.stage=phase;
+      makeReview(p,phase,`我收到这轮修改意见了。我们先留在${assetName(phase)}讨论，把方向确认清楚，再往后推进。此原型保留固定示例内容，你也可以手动改写文字；后续审核仍按共创授权进行。`,{scope:phase==='visual'?'visual':'story',snapshot:phase==='proposal'?p.proposal:phase==='script'?p.draftScript:undefined,feedback:text});
+    } else makeReview(p,'revision',scope==='audio'?'我理解你想把声音再收一点。建议沿用画面，让配乐更晚进入，并把环境声留在前面。你确认后，我会按这个方向推进。':'我收到了这些想法。建议把这轮意见作为一次完整修改，保留当前作品作对照，再检查故事、画面和声音是否需要一起变化。这是示例修改建议，尚未调用导演模型。',{scope,baseId:refs[0]?.versionId || p.adoptedId,refs:refs.map(a=>({...a})),feedback:text,reviewAfter:phase==='trial'?'trial':undefined});
     maybeDelegated(p);
   }
   commitRender({bottom:true});
@@ -349,15 +363,17 @@ document.addEventListener('click', async event => {
     case 'history': history(); break;
     case 'version-continue': {
       const v=version(p,id); if(!v) break; backupDraft(p);
-      const cancelled=Boolean(p.task); p.task=null; p.pending=null; p.adoptedId=id; p.draftScript=v.script; p.appliedScript=v.script; p.stage='finished';
-      p.messages.push(director(`现在从第 ${v.number} 版继续。已有版本保留了，未提交的手改稿可以在剧本中找回。${cancelled?'刚才的示例制作也已结束，避免它覆盖这次选择。':''}`)); touch(p); commitRender({bottom:true}); break;
+      const cancelled=Boolean(p.task); p.task=null; p.pausedTask=null; p.pending=null; p.adoptedId=id; p.draftScript=v.script; p.appliedScript=v.script; p.stage=v.title==='试拍'?'trial':'finished';
+      p.messages.push(director(`现在从第 ${v.number} 版继续。已有版本保留了，未提交的手改稿可以在剧本中找回。${cancelled?'刚才的示例制作也已结束，避免它覆盖这次选择。':''}`));
+      if(v.title==='试拍') makeReview(p,'trial','已回到这份试拍。要沿这个方向完成影片时，请确认继续；也可以先给修改意见。',{versionId:v.id});
+      touch(p); commitRender({bottom:true}); break;
     }
     case 'backups': modal('保留的手改稿',`<p>恢复只把文字放回编辑器；提交和应用仍由你决定。</p>${p.draftBackups.map((b,i)=>`<button class="history-row" data-action="library-open" data-kind="backup" data-id="${b.id}"><span><strong>手改稿 ${i+1}</strong><small>${new Date(b.created).toLocaleString('zh-CN')}</small></span>${icon('right')}</button>`).join('')}`); break;
     case 'backup-restore': { const b=p.draftBackups.find(b=>b.id===id); backupDraft(p); p.draftScript=b.text; openAsset('script'); notice('手改稿已回到编辑器，尚未提交。'); break; }
     case 'stop': requestStop(p); commitRender({bottom:true}); break;
     case 'demo-menu': modal('体验这个原型',`<p>所有项目、导演回复、连接检查和制作进展均为示例。状态保存在本浏览器；关闭页面后没有真实任务在后台运行。无需真实 API Key。</p><button class="asset-row" data-action="demo-from-menu"><span><strong>打开《最后一束光》</strong><small>查看作品，试试标注和版本操作</small></span>${icon('right')}</button>${p?`<button class="asset-row" data-action="simulate-failure"><span><strong>演示制作异常</strong><small>用导演的普通文字说明问题，再回复“继续”</small></span>${icon('right')}</button>`:''}<p style="margin:20px 0 0">原型用于讨论创作体验，不代表影片能力已经实现。示例画面采用原创程序绘制，未使用参考电影素材。</p>`); break;
     case 'demo-from-menu': closeModal(); state.activeId=state.projects.find(x=>x.title==='最后一束光')?.id||state.projects[0]?.id; commitRender({bottom:true}); break;
-    case 'simulate-failure': closeModal(); p.task=null; p.pending=null; p.stage='failed'; p.messages.push(director('这一轮示例制作暂时受阻：模拟的视频服务没有返回结果。已经完成的作品和你的草稿都保留着。建议稍后重试；你回复“继续”，我会从已有版本继续演示。')); commitRender({bottom:true}); break;
+    case 'simulate-failure': closeModal(); p.pausedTask=p.task||p.pausedTask; p.task=null; p.stage='failed'; p.messages.push(director('这一轮示例制作暂时受阻：模拟的视频服务没有返回结果。已经完成的作品和你的草稿都保留着。建议稍后重试；你回复“继续”，我会从已有版本继续演示。')); commitRender({bottom:true}); break;
     case 'dialog-close': closeModal(); break;
   }
 });
@@ -399,6 +415,6 @@ function frame(now) {
 }
 // Reload restores sample state, but never pretends work ran while the page was closed.
 for(const p of state.projects) {
-  if(p.task) { const stopping=p.task.status==='stopping'; p.task=null; p.stage='stopped'; p.messages.push(director(stopping?'页面重新打开，示例已停止。之前的停止请求与已有内容均已保留。':'页面重新打开，已恢复示例项目。上次的页面计时演示已停止；回复“继续”可以继续体验。真实后台任务恢复仍需后续实现。')); }
+  if(p.task) { const stopping=p.task.status==='stopping'; p.pausedTask=p.task; p.task=null; p.stage='stopped'; p.messages.push(director(stopping?'页面重新打开，示例已停止。之前的停止请求与已有内容均已保留。':'页面重新打开，已恢复示例项目。上次的页面计时演示已停止；回复“继续”可以继续体验。真实后台任务恢复仍需后续实现。')); }
 }
 persist(); render({bottom:true}); requestAnimationFrame(frame);

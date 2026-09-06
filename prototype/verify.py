@@ -141,6 +141,10 @@ with sync_playwright() as pw:
     assert project(page)["draftScript"] == later
     assert len(project(page)["versions"]) == original_versions + 1
     expect(editor).to_have_value(later)
+    page.locator('[data-action="asset"][data-kind="video"]').first.click()
+    assert project(page)["activeTab"] == "video:" + original_video
+    assert project(page)["adoptedId"] != original_video
+    passed("historical message artifact remains bound to its original version")
     passed("save differs from submit; review binds snapshot; later draft survives completion")
 
     action(page, "library")
@@ -189,7 +193,8 @@ with sync_playwright() as pw:
     expect(page.get_by_role("textbox", name="给导演的消息")).to_have_value("我想要一种温柔的不安。")
     page.wait_for_timeout(12500)
     page.locator(f'[data-action="project"][data-id="{original_id}"]').click()
-    assert project(page)["stage"] == "finished"
+    assert project(page)["stage"] in ["trial", "finished"]
+    assert project(page)["task"] is None
     assert project(page)["draftScript"] == later
     passed("ordinary-text failure recovery and project switching during a sample task")
 
@@ -247,6 +252,39 @@ with sync_playwright() as pw:
     assert project(page)["pending"] is None
     assert project(page)["activeTab"].startswith("proposal:")
     passed("first send creates project; full delegation completes while preserving viewed artifact")
+
+    action(page, "new")
+    action(page, "mode")
+    page.locator('[name="mode"][value="co"]').check()
+    action(page, "mode-save")
+    send(page, "一个安静的科幻故事")
+    send(page, "结尾能更温柔一点吗")
+    assert project(page)["pending"]["kind"] == "proposal"
+    send(page, "同意")
+    assert project(page)["pending"]["kind"] == "script"
+    assert project(page)["versions"] == []
+    send(page, "这里的动作再克制一点")
+    assert project(page)["pending"]["kind"] == "script"
+    send(page, "同意")
+    page.wait_for_timeout(5900)
+    assert project(page)["pending"]["kind"] == "visual"
+    assert project(page)["versions"] == []
+    send(page, "我希望光线更柔和")
+    assert project(page)["pending"]["kind"] == "visual"
+    send(page, "同意")
+    page.wait_for_timeout(5900)
+    assert project(page)["pending"]["kind"] == "trial"
+    send(page, "这里音乐再轻一点")
+    assert project(page)["pending"]["kind"] == "revision"
+    send(page, "同意")
+    action(page, "stop")
+    page.wait_for_timeout(1700)
+    send(page, "继续")
+    page.wait_for_timeout(12500)
+    assert project(page)["pending"]["kind"] == "trial"
+    assert project(page)["stage"] == "trial"
+    assert all(v["title"] == "试拍" for v in project(page)["versions"])
+    passed("early feedback retains co-creation gates; stopped trial revision resumes to trial review")
 
     # Only the explicitly allowed frontend files can be read through the server.
     for route in ["/.env.example", "/AGENTS.md", "/../package.json", "/state.js/../server.mjs"]:
