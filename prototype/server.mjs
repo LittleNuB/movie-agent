@@ -12,6 +12,7 @@ const allowed = new Map([
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/state.js', ['state.js', 'text/javascript; charset=utf-8']],
   ['/film-art.js', ['film-art.js', 'text/javascript; charset=utf-8']],
+  ['/model-settings.js', ['model-settings.js', 'text/javascript; charset=utf-8']],
 ]);
 
 http.createServer(async (req, res) => {

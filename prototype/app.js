@@ -1,5 +1,6 @@
 import { uid, clockTime, modeLabel, modeDescription, director, user, stamp, createProject, makeReview, openTab, load, save } from './state.js';
 import { drawFilm, DemoSound } from './film-art.js';
+import { createModelSettings } from './model-settings.js';
 
 const state = load();
 const app = document.querySelector('#app');
@@ -23,6 +24,7 @@ const symbols = {
   expand:'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
   sparkle:'m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z',
   logo:'M5 18V6l7 9 7-9v12', pencil:'m4 16 12-12 4 4L8 20H4zM14 6l4 4',
+  eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
 };
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${symbols[name] || symbols.film}"/></svg>`;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
@@ -31,6 +33,7 @@ const pNow = () => state.projects.find(p => p.id === state.activeId);
 let playing = false, playbackVersion = null, lastFrame = performance.now(), lastStored = 0, muted = true, toastTimeout;
 let storageFailed = false;
 const renderedMessages = new Set();
+const modelSettings = createModelSettings({state, modal, persist, notice, esc, icon});
 
 function persist() {
   if (!save(state) && !storageFailed) { storageFailed = true; notice('浏览器未能保存草稿，请先下载保留。当前页面仍可继续使用。'); }
@@ -145,6 +148,7 @@ function render({ bottom = false } = {}) {
 function pause() { playing=false; sound.stop(); }
 function commitRender(options={}) { persist(); render(options); }
 function modal(title,body) {
+  dialog.classList.remove('model-settings-dialog');
   dialog.innerHTML=`<div class="dialog-header"><h2 id="dialog-title">${title}</h2>${ib('dialog-close','close','关闭弹窗')}</div><div class="dialog-body">${body}</div>`;
   if(!dialog.open) dialog.showModal();
 }
@@ -268,9 +272,7 @@ function requestStop(p) {
 }
 
 function settings() {
-  modal('模型设置',`<p>正式版本将使用你自己的 API Key。这里仅演示配置与连接检查，不接收真实密钥，也不发送模型请求。</p>
-    ${[['director','导演与对话','GLM 5.3 Flash'],['video','视频生成','MiniMax H3'],['image','图像生成','Seedream 5.0 Pro'],['backup','备选视频','Seedance 2.0']].map(([id,title,name])=>`<div class="settings-provider"><label for="demo-${id}">${title}<span>${name}</span></label><div class="credential-row"><input id="demo-${id}" type="text" readonly placeholder="仅使用示例凭据" aria-label="${title}示例凭据"><button class="button" data-action="demo-key" data-id="${id}">填入示例</button><button class="button" data-action="check-key" data-id="${id}" disabled>模拟检查</button></div><div class="check-result" id="check-${id}" role="status">尚未检查</div></div>`).join('')}
-    <label class="option"><input type="checkbox" id="simulate-key-failure"><span><strong>演示连接失败</strong><small>检查后显示失败说明，可以关闭此选项重试。</small></span></label><div class="dialog-footer"><button class="button primary" data-action="settings-done">完成设置演示</button></div>`);
+  modelSettings.show();
 }
 function modeModal() {
   const selected=pNow()?.mode||state.defaultMode;
@@ -311,13 +313,6 @@ document.addEventListener('click', async event => {
     case 'theme': modal('外观',`<p>A 日间与 B 夜间采用同一套布局，选择会保留。</p>${[['system','跟随系统'],['light','A · 日间'],['dark','B · 夜间']].map(([value,label])=>`<label class="option"><input type="radio" name="theme" value="${value}" ${state.theme===value?'checked':''}><span><strong>${label}</strong></span></label>`).join('')}<div class="dialog-footer"><button class="button primary" data-action="theme-save">应用外观</button></div>`); break;
     case 'theme-save': state.theme=document.querySelector('[name="theme"]:checked').value; setTheme(); closeModal(); commitRender(); break;
     case 'settings': settings(); break;
-    case 'demo-key': document.querySelector(`#demo-${id}`).value='DEMO-ONLY-NOT-A-KEY'; document.querySelector(`[data-action="check-key"][data-id="${id}"]`).disabled=false; break;
-    case 'check-key': {
-      const result=document.querySelector(`#check-${id}`); const failed=document.querySelector('#simulate-key-failure').checked;
-      button.disabled=true; result.className='check-result'; result.textContent='正在模拟检查…';
-      setTimeout(()=>{ if(!result.isConnected) return; result.textContent=failed?'模拟失败：服务暂时不可用。可以检查配置后重试。':'模拟连接成功 · 未向服务商发送请求'; result.className=`check-result ${failed?'':'success'}`; button.disabled=false; },600); break;
-    }
-    case 'settings-done': state.configured=true; closeModal(); persist(); notice('设置演示已完成。未保存任何真实凭据。'); break;
     case 'mode': modeModal(); break;
     case 'mode-save': { const mode=document.querySelector('[name="mode"]:checked').value; closeModal(); changeMode(mode); break; }
     case 'work-close': p.workOpen=false; p.manuallyClosed=true; pause(); commitRender(); break;

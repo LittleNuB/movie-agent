@@ -4,6 +4,8 @@ Date: 2026-09-06
 
 Status: browser_checks_passed_user_review_pending
 
+本记录对应初版原型及其修复，截止提交 `9292c3a`。用户后续要求取消固定模型预设；模型设置已由[通用设置更新](model-settings-2026-09-06.md)取代，下方旧配置验证保留为当时结果。
+
 ## 检查对象与范围
 
 代码位于 `prototype/film-creation` 分支，从文档基线 `77a1cc08bc5e9901a31dfd728997823695f7c56e` 开始。运行入口为 `npm run dev`，默认 [本机 4317 端口](http://127.0.0.1:4317)。
