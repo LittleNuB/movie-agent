@@ -27,6 +27,7 @@
 | [实施进度](./plans/runtime-implementation.md) | 代码、真实接入与阶段交付状态 |
 | [Windows 运行指南](./runtime-guide.md) | 4318 真实服务、模型设置与恢复 |
 | [对话工作区体验](./plans/frontend-experience.md)及[验收](./validation/frontend-experience-2026-09-08.md) | 真实活动、历史原文、草稿、输入保留与资产浏览 |
+| [对话专属资产库验收](./validation/conversation-assets-2026-09-08.md) | 当前对话的中间产物集中收录、分类和搜索；完整任务移入运行记录 |
 | [用户反馈汇总](./validation/feedback-round-2026-09-08.md)及[中立走查](./validation/neutral-walkthrough-2026-09-08.md) | 原始质量问题、独立审查证据与剩余缺口 |
 | [真实运行证据](./validation/runtime-evidence-2026-09-06.md) | 真实产物、24 个 LLM 用例、控制与浏览器检查、尚未完成项 |
 | [原型浏览器检查](./validation/clickable-prototype-2026-09-06.md) | 实际桌面交互结果与示例能力限制 |
