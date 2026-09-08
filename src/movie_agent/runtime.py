@@ -14,6 +14,7 @@ from agentscope.permission import PermissionBehavior, PermissionRule
 from agentscope.state import AgentState
 from agentscope.tool import Toolkit
 
+from .activity import close_activity, record_event
 from .config import Configuration
 from .prompts import ROLES
 from .store import Store, uid
@@ -39,8 +40,12 @@ class Runtime:
         # Durable input records, not the in-memory bus, own restart recovery.
         for project in self.store.projects():
             for run in self.store.records(project["id"], "runs"):
+                if run["status"] in {"pending", "running"}:
+                    close_activity(self.store, project["id"], run["id"], "interrupted")
                 if run["role"] in {"director", "visual_evidence"} and run["status"] == "running":
                     self.store.update_record(run["id"], status="interrupted", interruption="service_restart")
+                    if run.get("message_id"):
+                        self.store.update_record(run["message_id"], streaming=False)
             for entry in self.store.records(project["id"], "inputs"):
                 if entry["status"] in {"pending", "processing"}:
                     self.store.update_record(entry["id"], status="pending")
@@ -160,24 +165,26 @@ class Runtime:
         attempted = {e["id"] for e in self.store.records(project_id, "inputs")
                      if e["status"] == "pending" and self.deliverable(project_id, e)}
         run = self.store.put_record(project_id, "runs", {"role": "director", "status": "running",
+                                                         "message_id": message_id, "input_ids": sorted(attempted),
                                                          "input_tokens": 0, "output_tokens": 0})
         try:
             agent = await self.make_agent(project_id)
             self.agents[project_id] = agent
             self.store.update_project(project_id, status="running")
-            self.store.put_record(project_id, "messages", {"role": "director", "text": "", "streaming": True}, message_id)
+            self.store.put_record(project_id, "messages", {"role": "director", "text": "", "streaming": True, "run_id": run["id"]}, message_id)
             prompt = "处理收件箱的新消息。先读取项目真实状态，再按用户意图与有效授权行动。"
             async for event in agent.reply_stream(UserMsg("项目服务", prompt), yield_final_msg=True):
                 if isinstance(event, Msg):
                     continue
                 kind = str(event.type).lower()
+                record_event(self.store, project_id, run, event)
                 if kind == "text_block_delta":
                     text += event.delta
-                    self.store.event(project_id, "text_delta", {"id": message_id, "delta": event.delta})
+                    self.store.append_message_text(project_id, message_id, event.delta)
                 elif kind == "hint_block":
                     self.queued_inputs.discard(event.block_id)
                     try:
-                        self.store.update_record(event.block_id, status="processing")
+                        self.store.update_record(event.block_id, status="processing", run_id=run["id"])
                         received.add(event.block_id)
                     except KeyError:
                         pass
@@ -186,7 +193,6 @@ class Runtime:
                     self.store.update_record(run["id"], input_tokens=latest["input_tokens"] + event.input_tokens,
                                              output_tokens=latest["output_tokens"] + event.output_tokens)
                 elif kind in {"tool_call_end", "tool_result_end"}:
-                    self.store.event(project_id, "activity", {"kind": kind, "tool": getattr(event, "name", "film_tool")})
                     await self.persist_agent(agent, project_id)
                 elif kind == "exceed_max_iters":
                     text += "\n本轮处理已达到执行步数，需要结合现有产物继续；未完成的任务仍有记录。"
@@ -219,6 +225,7 @@ class Runtime:
                 if entry["id"] in (received or attempted) and entry["status"] in {"pending", "processing"}:
                     self.store.update_record(entry["id"], status="failed")
         finally:
+            close_activity(self.store, project_id, run["id"], "interrupted" if self.store.record(run["id"])["status"] != "completed" else "ended")
             self.agents.pop(project_id, None)
             p = self.store.project(project_id)
             if p["status"] == "running":
@@ -263,6 +270,7 @@ class Runtime:
                 if isinstance(event, Msg):
                     continue
                 kind = str(event.type).lower()
+                record_event(self.store, pid, run, event)
                 if kind == "text_block_delta":
                     text += event.delta
                 elif kind == "model_call_end":
@@ -289,6 +297,8 @@ class Runtime:
             self.store.update_record(rid, status="failed", error_type=type(exc).__name__, result=text, delivery=delivery)
             if not self.closing and not self.store.project(pid).get("production_paused"):
                 await self.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
+        finally:
+            close_activity(self.store, pid, rid, "interrupted" if self.store.record(rid)["status"] != "completed" else "ended")
 
     async def stop(self, project_id):
         self.store.stop(project_id)

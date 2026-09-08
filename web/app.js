@@ -1,4 +1,6 @@
 import { openSettings } from './settings.js';
+import { markdown, date, roles, kinds, statuses, modeNames, trace, jobRows, workSummary, activityRows } from './workspace.js';
+import { reviewPanel, draftLabel, draftPanel, artifactPanel, libraryRows } from './panels.js';
 
 const $ = selector => document.querySelector(selector);
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -6,28 +8,35 @@ export const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d
 const button = (action, label, extra='') => `<button class="button" data-action="${action}" ${extra}>${label}</button>`;
 const ib = (action, name, label) => `<button class="icon-button" data-action="${action}" aria-label="${label}" title="${label}">${icon(name)}</button>`;
 export async function api(path, method='GET', body) {
-  const response = await fetch('/api'+path,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+  let response;
+  try{response=await fetch('/api'+path,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});}catch{throw Error('无法连接本地服务，请确认服务正在运行');}
   const data = await response.json();
-  if(!response.ok) throw Error(data.error || '请求失败');
+  if(!response.ok){const error=Error(data.error||'请求失败');error.status=response.status;throw error;}
   return data;
 }
 export function notice(text) { const box=$('#notice'); box.textContent=text; box.classList.add('visible'); clearTimeout(notice.timer); notice.timer=setTimeout(()=>box.classList.remove('visible'),6000); }
 export function modal(title, body, wide=false) { const d=$('#dialog'); d.className=wide?'api-dialog':''; d.innerHTML=`<div class="dialog-heading"><h2 id="dialog-title">${esc(title)}</h2>${ib('close-modal','close','关闭')}</div><div class="dialog-body">${body}</div>`; if(!d.open)d.showModal(); }
 
-const modeNames={co:'共创',auto:'托管',audio:'共创 · 声音托管'};
-const kinds={proposal:'故事提案',script:'剧本',visual_plan:'视觉方案',shot_plan:'镜头计划',edit_plan:'修改方案',continuity_check:'媒体观察',image:'图片',video:'镜头',audio:'声音',trial:'试拍',film:'影片',picture_master:'画面母版'};
-const statuses={idle:'等待你的想法',running:'导演处理中',waiting_review:'等你审核',stopped:'制作已中止',pending:'待执行',submitting:'正在提交',queued:'云端排队中',downloading:'保存素材中',rendering:'合成中',succeeded:'已完成',failed:'受阻',unknown:'提交结果待核对',cancelled_local:'本地已停止',download_failed:'结果已生成 · 下载受阻',query_failed:'云端状态查询受阻'};
 let projects=[], snapshot=null, activeId=null, composer='', newMode='co', navOpen=true;
 const requestedProject=new URLSearchParams(location.search).get('project');
 if(requestedProject&&/^[a-f0-9]{32}$/.test(requestedProject))activeId=requestedProject;
-let refreshTimer, loading=0, eventCursor=0;
+let refreshTimer, loading=0, composing=false;
 const views=new Map(), draftEdits=new Map();
 const saving=new Map(), pendingSends=new Map();
 let autosaveTimer, sending=false;
+let projectQuery='', libraryQuery='', libraryKind='', libraryHistory=false, connection='connecting', sendError='';
+const composers=new Map();
+const mediaPositions=new Map(), readingPositions=new Map();
+let panelWidth=48;
+try{panelWidth=Number(localStorage.getItem('movie-agent.runtime.panel-width'))||48;navOpen=localStorage.getItem('movie-agent.runtime.nav')!=='false';}catch{}
+function keepView(){if(activeId)try{localStorage.setItem('movie-agent.runtime.view.'+activeId,JSON.stringify(view()));}catch{}}
+function keepComposer(){if($('#message-input')){composer=$('#message-input').value;composers.set(activeId||'new',composer);try{sessionStorage.setItem('movie-agent.runtime.composer.'+(activeId||'new'),composer);}catch{}}}
+function restoreComposer(){try{composer=composers.get(activeId||'new')??sessionStorage.getItem('movie-agent.runtime.composer.'+(activeId||'new'))??'';}catch{composer='';}}
+restoreComposer();
 let theme=localStorage.getItem('movie-agent.runtime.theme')||'system';
 function setTheme(){document.documentElement.dataset.theme=theme==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;}
 setTheme();matchMedia('(prefers-color-scheme: dark)').addEventListener('change',setTheme);
-function view(){if(!views.has(activeId))views.set(activeId,{open:false,tabs:[],tab:null,seen:false});return views.get(activeId);}
+function view(){if(!views.has(activeId)){let saved;try{saved=JSON.parse(localStorage.getItem('movie-agent.runtime.view.'+activeId));}catch{}views.set(activeId,saved||{open:false,tabs:[],tab:null,seen:false});}return views.get(activeId);}
 const artifact = id => snapshot?.artifacts.find(a=>a.id===id);
 const time = n => `${String(Math.floor(n/60)).padStart(2,'0')}:${String(Math.floor(n%60)).padStart(2,'0')}`;
 const pendingAnnotations = () => snapshot?.annotations.filter(a=>!a.submitted_message_id&&!a.removed)||[];
@@ -36,79 +45,81 @@ async function refresh(){
   const id=activeId, ticket=++loading;
   const [list,data]=await Promise.all([api('/projects'),id?api('/projects/'+id):Promise.resolve(null)]);
   if(ticket!==loading||id!==activeId)return;
+  if(data&&snapshot?.project.id===id)for(const m of data.messages){const old=snapshot.messages.find(x=>x.id===m.id);if(m.streaming&&old?.text.length>m.text.length)m.text=old.text;}
   projects=list;snapshot=data;
   if(data){const v=view();if(!v.seen&&data.artifacts.length){const first=data.artifacts.find(a=>a.kind!=='picture_master');if(first){v.open=true;v.tab=first.id;v.tabs=[first.id];v.seen=true;}}}
   render();
 }
-function scheduleRefresh(){clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>refresh().catch(e=>notice(e.message)),450);}
-async function selectProject(id){composer=$('#message-input')?.value||composer;activeId=id;snapshot=null;composer='';await refresh();}
-function openArtifact(id){if(!artifact(id))return;const v=view();v.open=true;v.seen=true;if(!v.tabs.includes(id))v.tabs.push(id);v.tab=id;render();}
+function scheduleRefresh(){if(refreshTimer)return;refreshTimer=setTimeout(()=>{refreshTimer=null;refresh().catch(e=>notice(e.message));},250);}
+async function selectProject(id){keepComposer();activeId=id;snapshot=null;restoreComposer();if($('#message-input'))$('#message-input').value=composer;history.replaceState(null,'',id?'?project='+id:location.pathname);sendError='';await refresh();}
+function openArtifact(id){if(id!=='draft'&&!artifact(id))return;const v=view();v.open=true;v.seen=true;if(!v.tabs.includes(id))v.tabs.push(id);v.tab=id;keepView();render();}
 
 function renderMessage(m){
-  if(m.role==='user')return `<article class="message user"><div class="user-bubble">${(m.annotation_ids||[]).map(id=>{const a=snapshot.annotations.find(x=>x.id===id);return a?`<div class="sent-ref">${time(a.time)} · ${esc(artifact(a.artifact_id)?.title)}<br>${esc(a.text)}</div>`:'';}).join('')}${esc(m.text)}</div></article>`;
-  return `<article class="message director"><div class="director-byline"><span class="director-avatar">${icon('logo')}</span>导演</div><div class="message-text ${m.streaming?'streaming':''}" id="message-${m.id}">${esc(m.text)}</div></article>`;
+ if(m.role==='user'){
+  const entry=(snapshot.inputs||[]).find(i=>i.id==='input-'+m.id), labels={pending:'已接收 · 等待处理',processing:'已接收 · 处理中',done:'已处理',failed:'处理受阻'};
+  return `<article class="message user"><div class="user-bubble">${(m.annotation_ids||[]).map(id=>{const a=snapshot.annotations.find(x=>x.id===id);return a?`<button class="sent-ref" data-action="seek" data-id="${a.artifact_id}" data-time="${a.time}">${time(a.time)} · ${esc(artifact(a.artifact_id)?.title)}<br>${esc(a.text)}</button>`:'';}).join('')}${esc(m.text)}</div><small class="message-meta">${date(m.created)}${entry?' · '+(labels[entry.status]||'已发送'):''}</small></article>`;
+ }
+ const run=snapshot.runs.find(r=>r.id===m.run_id||r.message_id===m.id),received=run?(snapshot.inputs||[]).filter(i=>i.run_id===run.id&&i.source==='user'):[];
+ return `<article class="message director"><div class="director-byline"><span class="director-avatar">${icon('logo')}</span>主导演${m.error?'<span class="error-label">处理受阻</span>':''}</div>${run?trace(snapshot,run.id):''}${received.length>1?`<small class="message-meta">本轮已接收 ${received.length} 条消息，包含你的补充</small>`:''}<div class="message-text prose ${m.streaming?'streaming':''}" id="message-${m.id}">${m.text?markdown(m.text):m.streaming?'<span class="thinking-label">正在处理你的想法…</span>':''}</div>${!m.streaming&&m.text?`<div class="message-actions">${button('copy-message','复制回复',`data-id="${m.id}"`)}<small>${date(m.created)}</small></div>`:''}</article>`;
 }
-function renderWork(){
-  const v=view(), a=artifact(v.tab);
-  return `<aside class="work-pane" aria-label="作品侧栏"><div class="work-header"><div>作品 ${button('library','全部作品')}</div>${ib('close-work','close','收起作品侧栏')}</div><div class="tabs" role="tablist">${v.tabs.filter(id=>artifact(id)).map(id=>`<div class="tab ${id===v.tab?'active':''}"><button role="tab" aria-selected="${id===v.tab}" data-action="asset" data-id="${id}">${esc(artifact(id).title)}</button><button class="icon-button" data-action="close-tab" data-id="${id}" aria-label="关闭标签">${icon('close')}</button></div>`).join('')}</div><div class="artifact-body">${a?renderArtifact(a):'<div class="document">从全部作品打开剧本、参考图或影片。</div>'}</div></aside>`;
-}
-function renderArtifact(a){
-  const p=snapshot.project, review=snapshot.reviews.find(r=>r.artifact_id===a.id&&r.status==='pending');
-  const toolbar=`<div class="runtime-status">${esc(kinds[a.kind])} · ${esc(a.id.slice(0,8))}${p.adopted[a.kind]===a.id?' · 当前采用':''}</div>`;
-  const reviewBlock=review?`<div class="review"><p>${esc(review.question)}</p><div class="runtime-actions">${button('approve','确认并继续',`data-id="${review.id}"`)}${button('reject','提出修改',`data-id="${review.id}"`)}</div></div>`:'';
-  const download=`<a class="button" href="/api/artifacts/${a.id}/download" download>下载</a>`;
-  if(a.kind==='script'){
-    const edit=draftEdits.get(p.id);const text=edit?.text??(p.draft.revision>0?p.draft.text:a.text);
-    return `<div class="script-pane">${review?`<section class="script-review-snapshot"><h3>待审核版本：${esc(a.title)}</h3><pre class="runtime-document">${esc(a.text)}</pre>${reviewBlock}</section>`:''}<div class="script-toolbar"><span class="save-state" id="save-state">${edit?.dirty?'独立草稿 · 有未保存修改':p.draft.submitted_revision===p.draft.revision?'独立草稿 · 已提交':'独立草稿 · 保存与提交分开'}</span>${button('save-script','保存草稿')}${button('submit-script','提交修改')}</div><textarea id="script-editor" class="script-editor" aria-label="剧本编辑器">${esc(text)}</textarea><div class="artifact-footnote">${toolbar}你正在编辑独立草稿，保存不会应用到影片。${review?'上方审核仅对应完整展示的待审版本。':`<details><summary>查看打开版本的原文</summary><pre class="runtime-document">${esc(a.text)}</pre></details>`}</div></div>`;
-  }
-  if(['film','trial','video'].includes(a.kind))return `<div class="document">${toolbar}<h1>${esc(a.title)}</h1><video id="film-player" data-artifact="${a.id}" class="runtime-video" src="/api/media/${a.id}" controls preload="metadata">${a.meta.vtt_path?`<track kind="subtitles" src="/api/artifacts/${a.id}/subtitles" srclang="zh" label="中文字幕" default>`:""}</video><div class="runtime-actions">${button('annotate',icon('note')+'标注当前时间点')} ${download} ${a.meta.subtitle_path?`<a class="button" href="/api/artifacts/${a.id}/subtitles?format=srt" download>字幕文件</a>`:''} ${button('history','版本记录')}${button('adopt','从此版本继续',`data-id="${a.id}"`)}</div><div class="runtime-status">${a.meta.media?.duration?.toFixed(1)||'?'} 秒 · ${a.meta.picture_master_id?'保留独立画面母版':'生成源片段'}</div>${reviewBlock}${a.meta.edit?`<details><summary>采用素材与声音</summary><pre class="runtime-json">${esc(JSON.stringify(a.meta.edit,null,2))}</pre></details>`:''}</div>`;
-  if(a.kind==='image')return `<div class="document">${toolbar}<h1>${esc(a.title)}</h1><img class="runtime-image" src="/api/media/${a.id}" alt="${esc(a.title)}">${download}</div>`;
-  if(a.kind==='audio')return `<div class="document">${toolbar}<h1>${esc(a.title)}</h1><audio controls src="/api/media/${a.id}"></audio><div class="runtime-actions">${download}</div><p>此处播放实际保留的声音素材。</p></div>`;
-  return `<div class="document">${toolbar}<h1>${esc(a.title)}</h1>${(a.meta.asset_ids||[]).map(id=>artifact(id)?.kind==='image'?`<button data-action="asset" data-id="${id}"><img class="runtime-image" src="/api/media/${id}" alt="${esc(artifact(id).title)}"></button>`:'').join('')}<div class="runtime-document">${esc(a.text)}</div>${reviewBlock}<div class="runtime-actions">${download}</div>${a.meta.shots?`<details><summary>镜头资料</summary><pre class="runtime-json">${esc(JSON.stringify(a.meta.shots,null,2))}</pre></details>`:''}</div>`;
-}
+function renderWork(){const v=view(),a=artifact(v.tab);return `<div class="pane-resizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="调整作品侧栏宽度"></div><aside class="work-pane" aria-label="作品侧栏"><div class="work-header"><div>${button('library','全部作品')}${button('draft','剧本草稿')}</div>${ib('close-work','close','收起作品侧栏')}</div><div class="tabs" role="tablist">${v.tabs.filter(id=>id==='draft'||artifact(id)).map(id=>`<div class="tab ${id===v.tab?'active':''}"><button role="tab" aria-selected="${id===v.tab}" data-action="${id==='draft'?'draft':'asset'}" data-id="${id}">${esc(id==='draft'?'剧本草稿':artifact(id).title)}</button><button class="icon-button" data-action="close-tab" data-id="${id}" aria-label="关闭标签">${icon('close')}</button></div>`).join('')}</div><div class="artifact-body">${v.tab==='draft'?draftPanel(snapshot.project,draftEdits.get(activeId),saving.has(activeId),artifact):a?artifactPanel(a,snapshot,artifact):'<div class="empty-artifact">从全部作品打开剧本、图片或影片。</div>'}</div></aside>`;}
 function render(){
-  const oldPlayer=$('#film-player'),oldAid=oldPlayer?.dataset.artifact;
-  const focused=document.activeElement,focusId=focused?.id,selection=focused instanceof HTMLTextAreaElement?[focused.selectionStart,focused.selectionEnd]:null;
-  const scroll=$('#conversation')?.scrollTop||0,nearBottom=!$('#conversation')||$('#conversation').scrollHeight-scroll-$('#conversation').clientHeight<120;
-  if($('#message-input'))composer=$('#message-input').value;
-  const p=snapshot?.project,v=activeId?view():null;
-  $('#app').innerHTML=`<div class="shell ${v?.open?'with-work':''} ${navOpen?'':'nav-closed'}"><aside class="sidebar"><div class="brand"><div class="brand-mark">${icon('logo')}</div><strong>影片创作</strong></div><button class="new-project" data-action="new">${icon('plus')}<span>新建影片</span></button><div class="sidebar-content"><div class="section-label">我的影片</div>${projects.map(x=>`<button class="project-item ${x.id===p?.id?'active':''}" data-action="project" data-id="${x.id}"><strong>${esc(x.title)}</strong><small>${esc(statuses[x.status]||x.status)}</small></button>`).join('')}</div><div class="sidebar-bottom"><button class="text-button" data-action="settings">${icon('settings')}<span class="hide-collapsed">模型设置</span></button><button class="text-button" data-action="theme">${icon('sun')}<span class="hide-collapsed">日间 / 夜间</span></button><button class="text-button" data-action="nav">${icon('panel')}<span class="hide-collapsed">收起侧栏</span></button><span class="local-note hide-collapsed">本地运行 · API 生成</span></div></aside><main class="chat-pane"><header class="chat-header"><div class="title-group"><span class="project-title">${esc(p?.title||'新影片')}</span><span class="eyebrow">${p?esc(statuses[p.status]||p.status):'A STORY STARTS WITH YOU'}</span></div>${p?ib('work','work','打开作品侧栏'):''}</header>${p?`<div class="conversation" id="conversation"><div class="chat-body">${snapshot.messages.map(renderMessage).join('')}<div class="artifact-links">${snapshot.artifacts.filter(a=>!['picture_master','continuity_check'].includes(a.kind)).slice(-8).map(a=>`<button class="artifact-link" data-action="asset" data-id="${a.id}">${icon('film')}${esc(a.title)}</button>`).join('')}</div>${snapshot.reviews.filter(r=>r.status==='pending').map(r=>`<div class="review"><p>${esc(r.question)}</p><div class="runtime-actions">${button('asset','查看审核内容',`data-id="${r.artifact_id}"`)}${button('approve','确认并继续',`data-id="${r.id}"`)}${button('reject','提出修改',`data-id="${r.id}"`)}</div></div>`).join('')}${snapshot.jobs.length?`<details class="progress"><summary>制作进展 · ${snapshot.jobs.filter(j=>j.status==='succeeded').length}/${snapshot.jobs.length}</summary>${snapshot.jobs.map(j=>`<div class="runtime-task">${esc(j.title)} · ${esc(statuses[j.status]||j.status)}${j.candidate_only?' · 候选保留':''}<small>${esc(j.error||'')}</small>${['unknown','failed','download_failed','query_failed'].includes(j.status)?button('recover','核对与恢复',`data-id="${j.id}"`):''}</div>`).join('')}</details>`:''}</div></div>`:`<div class="welcome"><div class="welcome-inner"><div class="welcome-orbit"><div class="brand-mark">${icon('logo')}</div></div><div class="eyebrow">A STORY STARTS WITH YOU</div><h1>你想拍一个怎样的故事？</h1><p>一句话、一个画面，或一种感受都可以。<br>我们一起把它慢慢拍出来。</p><div class="welcome-actions">${button('settings','配置模型')}</div></div></div>`}<div class="composer-zone"><div class="composer">${pendingAnnotations().map(a=>`<div class="annotation-draft"><button class="annotation-ref" data-action="asset" data-id="${a.artifact_id}">${time(a.time)} · ${esc(artifact(a.artifact_id)?.title)}</button><span>${esc(a.text)}</span><div class="annotation-actions">${button('send-annotation','发送',`data-id="${a.id}"`)}${button('edit-annotation','编辑',`data-id="${a.id}"`)}${button('remove-annotation','移除',`data-id="${a.id}"`)}</div></div>`).join('')}<textarea id="message-input" aria-label="给导演发消息" placeholder="描述你的想法，或告诉我哪里想改…" rows="3">${esc(composer)}</textarea><div class="composer-bottom"><button class="mode-trigger" data-action="mode">${modeNames[p?.mode||newMode]}</button><div class="composer-actions">${p?.production_paused?button('resume','继续制作'):p?ib('stop','stop','中止当前制作'):''}<button class="send-button" data-action="send" aria-label="发送消息">${icon('arrow')}</button></div></div></div><div class="composer-help">${p?.production_paused?'制作已中止，仍可继续讨论。':'按 Enter 发送，Shift + Enter 换行。'}</div></div></main>${v?.open?renderWork():''}</div>`;
-  const newPlayer=$('#film-player');if(oldPlayer&&newPlayer&&oldAid===newPlayer.dataset.artifact)newPlayer.replaceWith(oldPlayer);
-  const player=$('#film-player');
-  if(player&&artifact(player.dataset.artifact)?.meta.vtt_path&&!player.querySelector('track')){const captions=document.createElement('track');captions.kind='subtitles';captions.label='中文字幕';captions.srclang='zh';captions.src=`/api/artifacts/${player.dataset.artifact}/subtitles`;captions.default=true;player.append(captions);const link=document.createElement('a');link.className='button';link.textContent='下载字幕';link.href=`/api/artifacts/${player.dataset.artifact}/subtitles?format=srt`;link.download='subtitles.srt';player.parentElement.querySelector('.runtime-actions')?.append(link);}
-  if($('#conversation'))$('#conversation').scrollTop=nearBottom?$('#conversation').scrollHeight:scroll;
-  if(focusId&&$( '#'+focusId)&&selection){$('#'+focusId).focus({preventScroll:true});$('#'+focusId).setSelectionRange(...selection);}
+ if(composing)return;
+ const media=[...document.querySelectorAll('video[data-artifact],audio[data-artifact]')];
+ for(const old of media)mediaPositions.set(old.dataset.artifact,old.currentTime);
+ const oldBody=$('.artifact-body');if(oldBody?.dataset.reading)readingPositions.set(oldBody.dataset.reading,oldBody.scrollTop);
+ const focused=document.activeElement,focusId=focused?.id,selection=focused&&'selectionStart' in focused?[focused.selectionStart,focused.selectionEnd]:null;
+ const c=$('#conversation'),scroll=c?.scrollTop||0,nearBottom=!c||c.scrollHeight-scroll-c.clientHeight<100;
+ const opened=new Set([...document.querySelectorAll('details[open][data-detail]')].map(d=>d.dataset.detail));
+ keepComposer();const p=snapshot?.project,v=activeId?view():null,busy=snapshot?.runs.some(r=>['running','pending'].includes(r.status));
+ $('#app').innerHTML=`<div class="shell ${v?.open?'with-work':''} ${navOpen?'':'nav-closed'}" style="--work-width:${panelWidth}%"><aside class="sidebar"><div class="brand"><div class="brand-mark">${icon('logo')}</div><strong>Movie Agent</strong>${ib('nav','panel','展开或收起项目侧栏')}</div><button class="new-project" data-action="new">${icon('plus')}<span>新建影片</span><kbd>Ctrl K</kbd></button><div class="project-search"><input id="project-search" aria-label="搜索影片" placeholder="搜索影片…" value="${esc(projectQuery)}"></div><div class="sidebar-content"><div class="section-label">影片项目</div>${projects.filter(x=>x.title.toLowerCase().includes(projectQuery.toLowerCase())).map(x=>`<button class="project-item ${x.id===p?.id?'active':''}" data-action="project" data-id="${x.id}"><strong>${esc(x.title)}</strong><small><i class="status-dot ${x.status==='running'?'pulse':''}"></i>${esc(statuses[x.status]||x.status)}</small></button>`).join('')||'<small class="empty-projects">影片会保存在这里</small>'}</div><div class="sidebar-bottom"><button class="text-button" data-action="settings">${icon('settings')}<span class="hide-collapsed">模型设置</span></button><button class="text-button" data-action="theme">${icon('sun')}<span class="hide-collapsed">外观 · ${theme==='system'?'跟随系统':theme==='dark'?'夜间':'日间'}</span></button><small class="connection-state ${connection}" id="connection-state">${connection==='connected'?'本地服务已连接':connection==='connecting'?'连接本地服务…':'连接已断开 · 正在重连'}</small></div></aside><main class="chat-pane"><header class="chat-header"><div class="header-leading">${!navOpen?ib('nav','panel','展开项目侧栏'):''}<div class="title-group"><button class="project-title" data-action="${p?'rename':'noop'}">${esc(p?.title||'新影片')}${p?'<span class="rename-hint">⌄</span>':''}</button><span class="eyebrow">${p?esc(modeNames[p.mode])+' · '+(p.production_paused?'媒体制作暂停':'本地电影项目'):'从想法开始，慢慢拍出来'}</span></div></div><div class="header-actions">${p?button('activity','运行记录')+ib('work','work','打开作品侧栏'):''}</div></header>${p?`<div class="conversation" id="conversation"><div class="chat-body">${snapshot.messages.map(renderMessage).join('')}<div class="artifact-links">${snapshot.artifacts.filter(a=>!['picture_master','continuity_check'].includes(a.kind)).slice(-6).map(a=>`<button class="artifact-link" data-action="asset" data-id="${a.id}">${icon(a.kind==='script'?'note':'film')}<span>${esc(a.title)}<small>${esc(kinds[a.kind]||a.kind)}</small></span><span>↗</span></button>`).join('')}</div>${snapshot.reviews.filter(r=>r.status==='pending').map(reviewPanel).join('')}${snapshot.jobs.length?`<details class="progress" data-detail="jobs"><summary>媒体任务 · ${snapshot.jobs.filter(j=>j.status==='succeeded').length}/${snapshot.jobs.length} 已完成</summary>${jobRows(snapshot)}</details>`:''}</div></div><button class="jump-latest" data-action="latest" ${nearBottom?'hidden':''}>↓ 回到最新消息</button>`:`<div class="welcome"><div class="welcome-inner"><div class="welcome-orbit"><div class="brand-mark">${icon('logo')}</div></div><h1>让一个想法，<br>成为一段电影。</h1><p>从故事、人物或一个画面开始。<br>你来决定方向，导演陪你把它拍出来。</p><div class="starter-prompts">${['先一起想一个有趣的故事','我有一个画面，想把它拍出来','帮我梳理故事，先不生成素材'].map(t=>button('starter',esc(t),`data-text="${esc(t)}"`)).join('')}</div></div></div>`}<div class="composer-zone">${p?`<div class="working-status ${busy?'is-working':''}" role="status"><span class="activity-dot ${busy?'pulse':''}"></span><span>${esc(workSummary(snapshot))}</span>${button('activity','展开')}</div>`:''}${sendError?`<p class="send-error" role="alert">${esc(sendError)} · 输入已保留，可再次发送。</p>`:''}<div class="composer">${pendingAnnotations().map(a=>`<div class="annotation-draft"><button class="annotation-ref" data-action="seek" data-id="${a.artifact_id}" data-time="${a.time}">${time(a.time)} · ${esc(artifact(a.artifact_id)?.title)}</button><span>${esc(a.text)}</span><div class="annotation-actions">${button('send-annotation','单条发送',`data-id="${a.id}"`)}${button('edit-annotation','编辑',`data-id="${a.id}"`)}${button('remove-annotation','移除',`data-id="${a.id}"`)}</div></div>`).join('')}<textarea id="message-input" aria-label="给导演发消息" placeholder="${p?'继续聊聊，或告诉导演你想怎么改…':'你想拍一个怎样的故事？'}" rows="2">${esc(composer)}</textarea><div class="composer-bottom"><button class="mode-trigger" data-action="mode">${modeNames[p?.mode||newMode]} <span>⌄</span></button><div class="composer-actions">${p?.production_paused?button('resume','继续制作'):p?ib('stop','stop','中止当前制作'):''}<button class="send-button" data-action="send" aria-label="发送消息" ${sending?'disabled':''}>${icon('arrow')}</button></div></div></div><div class="composer-help">${p?.production_paused?'媒体制作已暂停，发送讨论消息不会自动恢复。':busy?'可以继续发送补充，导演会接收。':'Enter 发送 · Shift + Enter 换行'}${pendingAnnotations().length?' · 发送时一并提交 '+pendingAnnotations().length+' 条标注':''}</div></div></main>${v?.open?renderWork():''}</div>`;
+ for(const old of media){const fresh=document.querySelector(`[data-artifact="${old.dataset.artifact}"]`);if(fresh&&fresh.tagName===old.tagName)fresh.replaceWith(old);}
+ for(const fresh of document.querySelectorAll('video[data-artifact],audio[data-artifact]'))if(!media.includes(fresh)&&mediaPositions.has(fresh.dataset.artifact)){const position=mediaPositions.get(fresh.dataset.artifact);fresh.addEventListener('loadedmetadata',()=>{fresh.currentTime=position;},{once:true});}
+ for(const d of document.querySelectorAll('details[data-detail]'))if(opened.has(d.dataset.detail))d.open=true;
+ if($('#conversation'))$('#conversation').scrollTop=nearBottom?$('#conversation').scrollHeight:scroll;
+ if($('.artifact-body')){const body=$('.artifact-body');body.dataset.reading=activeId+':'+v.tab;body.scrollTop=readingPositions.get(body.dataset.reading)||0;}
+ if(focusId&&document.getElementById(focusId)){const el=document.getElementById(focusId);el.focus({preventScroll:true});if(selection&&el.setSelectionRange&&el.type!=='number')el.setSelectionRange(...selection);}
+ resizeComposer();
+ if($('#dialog').open&&$('#activity-content'))updateActivity();
 }
+function resizeComposer(){const e=$('#message-input');if(e){e.style.height='auto';e.style.height=Math.min(180,Math.max(56,e.scrollHeight))+'px';}if($('.jump-latest'))$('.jump-latest').style.bottom=($('.composer-zone').offsetHeight+8)+'px';}
 
 async function saveScript(){
   clearTimeout(autosaveTimer);
-  if(saving.has(activeId)){await saving.get(activeId);return saveScript();}
-  const pid=activeId,p=snapshot.project,text=$('#script-editor')?.value??draftEdits.get(pid)?.text??p.draft.text;
+  if(saving.has(activeId)){const waiting=activeId;await saving.get(waiting);if(waiting!==activeId)return;return saveScript();}
+  const pid=activeId,p=snapshot.project,text=draftEdits.get(pid)?.text??p.draft.text;
   const edit=draftEdits.get(pid);
   if(edit?.conflict)throw Error('草稿发生版本冲突，当前手改内容已保留在编辑器中，请先复制保留并核对版本。');
-  if(text===p.draft.text)return p.draft;
-  const request=api(`/projects/${pid}/draft`,'PUT',{text,expected_revision:edit?.base??p.draft.revision,source_artifact_id:edit?.source??view().tab});saving.set(pid,request);
-  try{const saved=await request;const latest=draftEdits.get(pid);const newer=latest&&latest.text!==text;const currentText=newer?latest.text:text;if(activeId===pid)snapshot.project.draft=saved;draftEdits.set(pid,{text:currentText,base:saved.revision,dirty:!!newer});if(activeId===pid&&$('#save-state'))$('#save-state').textContent=newer?'正在保存新修改…':'草稿已保存，尚未应用';if(newer&&activeId===pid)autosaveTimer=setTimeout(()=>saveScript().catch(e=>notice(e.message)),500);return saved;}
-  catch(e){const latest=draftEdits.get(pid);draftEdits.set(pid,{text:latest?.text??text,base:edit?.base??p.draft.revision,dirty:true,conflict:true});throw e;}
+  if(text===p.draft.text){if(edit)draftEdits.set(pid,{...edit,dirty:false,base:p.draft.revision});return p.draft;}
+  const request=api(`/projects/${pid}/draft`,'PUT',{text,expected_revision:edit?.base??p.draft.revision,source_artifact_id:edit?.source??p.draft.source_artifact_id});saving.set(pid,request);
+  try{const saved=await request;const latest=draftEdits.get(pid);const newer=latest&&latest.text!==text;const currentText=newer?latest.text:text;if(activeId===pid)snapshot.project.draft=saved;draftEdits.set(pid,{text:currentText,base:saved.revision,source:saved.source_artifact_id,dirty:!!newer});if(activeId===pid&&$('#save-state'))$('#save-state').textContent=draftLabel(snapshot.project,draftEdits.get(pid),false);if(newer&&activeId===pid)autosaveTimer=setTimeout(()=>saveScript().catch(e=>notice(e.message)),500);return saved;}
+  catch(e){const latest=draftEdits.get(pid);draftEdits.set(pid,{...latest,text:latest?.text??text,base:edit?.base??p.draft.revision,dirty:true,conflict:e.status===409});if(activeId===pid&&$('#save-state'))$('#save-state').textContent=e.status===409?'保存冲突 · 你的修改已保留':'保存失败 · 修改仍在编辑器，可重试';throw e;}
   finally{saving.delete(pid);}
 }
 async function send(annotationId){
   if(sending)return;
   const text=$('#message-input')?.value.trim()||'', annotations=annotationId?[annotationId]:pendingAnnotations().map(a=>a.id);
   if(!text&&!annotations.length)return;
-  sending=true;
+  sending=true;sendError='';let pid=activeId;
   try{
-  if(!activeId){const p=await api('/projects','POST',{mode:newMode});activeId=p.id;}
-  const signature=JSON.stringify([activeId,text,annotations]);if(!pendingSends.has(signature))pendingSends.set(signature,crypto.randomUUID());
-  await api(`/projects/${activeId}/messages`,'POST',{text,annotation_ids:annotations,client_id:pendingSends.get(signature)});
+  if(!pid){const p=await api('/projects','POST',{mode:newMode});pid=p.id;composers.set(pid,text);composers.delete('new');sessionStorage.removeItem('movie-agent.runtime.composer.new');if(!activeId){activeId=pid;history.replaceState(null,'','?project='+activeId);}}
+  const signature=JSON.stringify([pid,text,annotations]);if(!pendingSends.has(signature))pendingSends.set(signature,crypto.randomUUID());
+  await api(`/projects/${pid}/messages`,'POST',{text,annotation_ids:annotations,client_id:pendingSends.get(signature)});
   pendingSends.delete(signature);
-  composer='';if($('#message-input'))$('#message-input').value='';await refresh();
-  }finally{sending=false;}
+  if(activeId===pid&&$('#message-input')?.value.trim()===text){composer='';$('#message-input').value='';keepComposer();}else if((composers.get(pid)||'').trim()===text){composers.set(pid,'');sessionStorage.removeItem('movie-agent.runtime.composer.'+pid);}
+  await refresh();
+  }catch(e){sendError=e.message;render();throw e;}finally{sending=false;const b=$('[data-action="send"]');if(b)b.disabled=false;}
 }
 
 document.addEventListener('input',e=>{
-  if(e.target.id==='script-editor'){const prior=draftEdits.get(activeId);draftEdits.set(activeId,{...prior,text:e.target.value,base:prior?.base??snapshot.project.draft.revision,source:prior?.source??view().tab,dirty:true});$('#save-state').textContent='有未保存修改';clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>saveScript().catch(err=>notice(err.message)),800);}
+  if(e.target.id==='script-editor'){const prior=draftEdits.get(activeId);draftEdits.set(activeId,{...prior,text:e.target.value,base:prior?.base??snapshot.project.draft.revision,source:prior?.source??snapshot.project.draft.source_artifact_id,dirty:true});$('#save-state').textContent='有未保存修改';clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>saveScript().catch(err=>notice(err.message)),800);}
+  if(e.target.id==='message-input'){keepComposer();resizeComposer();}
+  if(e.target.id==='project-search'){projectQuery=e.target.value;render();}
+  if(e.target.id==='library-search'||e.target.id==='library-kind'){libraryQuery=$('#library-search').value;libraryKind=$('#library-kind').value;$('#library-results').innerHTML=libraryRows(snapshot,libraryQuery,libraryKind,libraryHistory);}
 });
+document.addEventListener('compositionstart',e=>{if(['script-editor','message-input','project-search'].includes(e.target.id))composing=true;});
+document.addEventListener('compositionend',()=>{composing=false;scheduleRefresh();});
+window.addEventListener('resize',resizeComposer);
 document.addEventListener('keydown',e=>{if(e.target.id==='message-input'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send().catch(err=>notice(err.message));}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-action]');if(!b||b.disabled)return;
@@ -116,15 +127,25 @@ document.addEventListener('click',async e=>{
   try{
     if(action==='close-modal'){$('#dialog').close();return;}
     if(action==='settings'){await openSettings();return;}
-    if(action==='new'){if(draftEdits.get(activeId)?.dirty)await saveScript();activeId=null;snapshot=null;composer='';render();return;}
+    if(action==='new'){if(draftEdits.get(activeId)?.dirty)await saveScript();await selectProject(null);return;}
     if(action==='project'){if(draftEdits.get(activeId)?.dirty)await saveScript();await selectProject(id);return;}
     if(action==='send'||action==='send-annotation'){b.disabled=true;await send(action==='send-annotation'?id:null);return;}
-    if(action==='theme'){theme=document.documentElement.dataset.theme==='dark'?'light':'dark';localStorage.setItem('movie-agent.runtime.theme',theme);setTheme();return;}
-    if(action==='nav'){navOpen=!navOpen;render();return;}
-    if(action==='work'){view().open=true;render();if(!view().tabs.length)showLibrary();return;}
-    if(action==='close-work'){view().open=false;view().seen=true;render();return;}
+    if(action==='theme'){modal('外观',['system','light','dark'].map(t=>button('set-theme',t==='system'?'跟随系统':t==='light'?'日间':'夜间',`data-id="${t}" aria-pressed="${theme===t}"`)).join(''));return;}
+    if(action==='set-theme'){theme=id;localStorage.setItem('movie-agent.runtime.theme',theme);setTheme();$('#dialog').close();render();return;}
+    if(action==='nav'){navOpen=!navOpen;localStorage.setItem('movie-agent.runtime.nav',navOpen);render();return;}
+    if(action==='work'){view().open=true;keepView();render();if(!view().tabs.length)showLibrary();return;}
+    if(action==='close-work'){view().open=false;view().seen=true;keepView();render();return;}
     if(action==='asset'){$('#dialog').close();openArtifact(id);return;}
-    if(action==='close-tab'){view().tabs=view().tabs.filter(x=>x!==id);if(view().tab===id)view().tab=view().tabs.at(-1);render();return;}
+    if(action==='close-tab'){view().tabs=view().tabs.filter(x=>x!==id);if(view().tab===id)view().tab=view().tabs.at(-1);keepView();render();return;}
+    if(action==='starter'){$('#message-input').value=b.dataset.text;keepComposer();resizeComposer();$('#message-input').focus();return;}
+    if(action==='activity'){showActivity();return;}
+    if(action==='latest'){$('#conversation').scrollTo({top:$('#conversation').scrollHeight,behavior:'smooth'});return;}
+    if(action==='copy-message'){await navigator.clipboard.writeText(snapshot.messages.find(m=>m.id===id).text);notice('回复已复制');return;}
+    if(action==='copy-draft'){await navigator.clipboard.writeText(draftEdits.get(activeId)?.text??snapshot.project.draft.text);notice('你的修改已复制');return;}
+    if(action==='rename'){modal('影片名称',`<input id="project-title-input" class="dialog-textarea" aria-label="影片名称" maxlength="200" value="${esc(snapshot.project.title)}"><div class="dialog-footer">${button('save-title','保存名称')}</div>`);return;}
+    if(action==='save-title'){await api(`/projects/${activeId}/title`,'PUT',{title:$('#project-title-input').value});$('#dialog').close();await refresh();return;}
+    if(action==='draft'||action==='edit-draft'){if(action==='edit-draft'&&!snapshot.project.draft.revision&&!draftEdits.has(activeId)){draftEdits.set(activeId,{text:artifact(id).text,base:0,source:id,dirty:true});}openArtifact('draft');if(draftEdits.get(activeId)?.dirty)await saveScript();return;}
+    if(action==='seek'){openArtifact(id);const player=$('#film-player');if(player){const seek=()=>{player.currentTime=Number(b.dataset.time);player.pause();};if(player.readyState)seek();else player.addEventListener('loadedmetadata',seek,{once:true});}return;}
     if(action==='library'){showLibrary();return;}
     if(action==='history'){showLibrary(true);return;}
     if(action==='save-script'){await saveScript();return;}
@@ -146,13 +167,24 @@ document.addEventListener('click',async e=>{
     if(action==='bind-job'){await api(`/projects/${activeId}/jobs/${id}/recover`,'POST',{external_id:$('#external-task-id').value.trim()});$('#dialog').close();await refresh();}
   }catch(err){notice(err.message);}finally{if(b.isConnected)b.disabled=false;}
 });
-function showLibrary(history=false){modal(history?'影片版本':'全部作品',snapshot.artifacts.filter(a=>history?['film','trial'].includes(a.kind):a.kind!=='picture_master').slice().reverse().map(a=>`<button class="asset-row" data-action="asset" data-id="${a.id}"><span><strong>${esc(a.title)}</strong><small>${esc(kinds[a.kind])} · ${a.id.slice(0,8)}${snapshot.project.adopted[a.kind]===a.id?' · 当前采用':''}</small></span>${icon('film')}</button>`).join('')||'<p>作品会随着创作逐步出现。</p>');}
-window.addEventListener('beforeunload',e=>{if([...draftEdits.values()].some(d=>d.dirty)){e.preventDefault();e.returnValue='';}});
+function showLibrary(history=false){libraryHistory=history?(artifact(view().tab)?.kind||'film'):false;libraryQuery='';libraryKind='';modal(history?'版本记录':'全部作品',`<div class="library-controls"><input id="library-search" aria-label="搜索作品" placeholder="搜索作品名称…"><select id="library-kind" aria-label="作品类型"><option value="">全部类型</option>${Object.entries(kinds).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div id="library-results">${libraryRows(snapshot,libraryQuery,libraryKind,libraryHistory)}</div>`,true);}
+function showActivity(){modal('运行记录','<div id="activity-content"></div>',true);updateActivity();}
+function updateActivity(){
+ const s=snapshot,box=$('#activity-content');if(!s||!box)return;
+ const scroll=$('#dialog').scrollTop,closed=new Set([...box.querySelectorAll('details:not([open])')].map(d=>d.dataset.run));
+ box.innerHTML=`<p>${esc(workSummary(s))}</p><p class="activity-explanation">实际模型请求、工具与媒体任务记录，随运行更新。工具提交结束后，云端生成可能仍在运行。</p>${s.runs.slice().reverse().map(r=>`<details class="run-block" data-run="${r.id}" ${closed.has(r.id)?'':'open'}><summary>${esc(roles[r.role]||r.role)} · ${esc(statuses[r.status]||r.status)} · ${date(r.created)}</summary>${r.task?`<p>${esc(r.task)}</p>`:''}${activityRows((s.activities||[]).filter(a=>a.run_id===r.id))||'<small>该次运行没有更详细的活动记录。</small>'}<small>累计调用用量：输入 ${r.input_tokens||0} / 输出 ${r.output_tokens||0} tokens；非当前上下文占用。</small></details>`).join('')||'<p>发送消息后，执行记录会出现在这里。</p>'}${jobRows(s)}`;
+ $('#dialog').scrollTop=scroll;
+}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('[data-action="new"]').click();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&$('#script-editor')){e.preventDefault();saveScript().catch(err=>notice(err.message));}if(e.target.classList.contains('pane-resizer')&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();panelWidth=Math.min(65,Math.max(32,panelWidth+(e.key==='ArrowLeft'?2:-2)));localStorage.setItem('movie-agent.runtime.panel-width',panelWidth);render();}});
+document.addEventListener('scroll',e=>{if(e.target.id==='conversation'&&$('.jump-latest'))$('.jump-latest').hidden=e.target.scrollHeight-e.target.scrollTop-e.target.clientHeight<100;},true);
+document.addEventListener('pointerdown',e=>{if(!e.target.classList.contains('pane-resizer'))return;e.preventDefault();const move=ev=>{panelWidth=Math.min(65,Math.max(32,(innerWidth-ev.clientX)/innerWidth*100));$('.shell').style.setProperty('--work-width',panelWidth+'%');};const end=()=>{localStorage.setItem('movie-agent.runtime.panel-width',panelWidth);document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);};document.addEventListener('pointermove',move);document.addEventListener('pointerup',end);});
+window.addEventListener('beforeunload',e=>{keepComposer();keepView();if([...draftEdits.values()].some(d=>d.dirty)){e.preventDefault();e.returnValue='';}});
 const events=new EventSource('/api/events');
+events.onopen=()=>{connection='connected';scheduleRefresh();};
 events.onmessage=event=>{
-  eventCursor=Number(event.lastEventId);const data=JSON.parse(event.data);
-  if(data.kind==='text_delta'&&data.project_id===activeId){const box=$('#message-'+data.body.id);if(box){box.textContent+=data.body.delta;return;}}
-  scheduleRefresh();
+ const data=JSON.parse(event.data);
+ if(data.kind==='text_delta'&&data.project_id===activeId){const m=snapshot?.messages.find(m=>m.id===data.body.id),box=$('#message-'+data.body.id);if(m&&box){if(!m.streaming)return;const length=Array.from(m.text).length;if(data.body.offset<length)return;if(data.body.offset!==length){scheduleRefresh();return;}m.text+=data.body.delta;const c=$('#conversation'),bottom=c.scrollHeight-c.scrollTop-c.clientHeight<100;box.innerHTML=markdown(m.text);if(bottom)c.scrollTop=c.scrollHeight;return;}}
+ scheduleRefresh();
 };
-events.onerror=()=>{if(eventCursor)notice('连接暂时中断，正在重连。已提交任务由本地服务继续管理。');};
-await refresh();
+events.onerror=()=>{connection='disconnected';const e=$('#connection-state');if(e){e.className='connection-state disconnected';e.textContent='连接已断开 · 正在重连';}};
+await refresh().catch(e=>{connection='disconnected';render();notice(e.message);});

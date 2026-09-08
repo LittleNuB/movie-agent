@@ -316,9 +316,15 @@ class FilmTools:
                                                                  "reason": reason})
             return output(self.store.update_project(project_id, production_paused=False, status="idle"))
 
+        async def rename_project(title: str):
+            """Persist an explicit project name; only report renamed after this succeeds."""
+            if not title.strip() or len(title.strip()) > 200:
+                raise ValueError("影片名称需要1至200个字符")
+            return output(self.store.update_project(project_id, title=title.strip()))
+
         functions = [read_project, read_artifact, publish_document, generate_media, compose, export_film_version, inspect_media, extract_frame, recover_task, voice_catalog]
         if role == "director":
-            functions += [request_review, record_user_review, delegate, resume_production]
+            functions += [request_review, record_user_review, delegate, resume_production, rename_project]
         result = []
         for func in functions:
             async def guarded(_function=func, **kwargs):

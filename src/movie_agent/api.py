@@ -27,6 +27,10 @@ class NewProject(BaseModel):
     mode: Literal["co", "auto", "audio"] = "co"
 
 
+class ProjectTitle(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
 class MessageInput(BaseModel):
     text: str = Field(max_length=60000)
     client_id: str = Field(default_factory=uid, pattern=r"^[A-Za-z0-9_-]{1,100}$")
@@ -175,7 +179,17 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
 
     @app.get("/api/projects/{pid}")
     async def project(pid: str):
-        return film.public_snapshot(pid)
+        snapshot = film.public_snapshot(pid)
+        snapshot["activities"] = store.records(pid, "activities")[-250:]
+        snapshot["inputs"] = [{k: item.get(k) for k in ("id", "status", "source", "created", "run_id")}
+                              for item in store.records(pid, "inputs")]
+        return snapshot
+
+    @app.put("/api/projects/{pid}/title")
+    async def rename_project(pid: str, body: ProjectTitle):
+        if not body.title.strip():
+            raise ValueError("请填写影片名称")
+        return store.update_project(pid, title=body.title.strip())
 
     @app.post("/api/projects/{pid}/messages")
     async def message(pid: str, body: MessageInput):
@@ -316,7 +330,7 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
 
     @app.get("/{filename}")
     async def static(filename: str):
-        if filename not in {"app.js", "settings.js", "styles.css"}:
+        if filename not in {"app.js", "settings.js", "workspace.js", "panels.js", "styles.css", "workspace.css"}:
             return JSONResponse({"error": "Not found"}, 404)
         return FileResponse(repo / "web" / filename)
 

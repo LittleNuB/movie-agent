@@ -304,6 +304,20 @@ class Store:
         with self.connect() as con:
             self._event(con, project_id, kind, data)
 
+    def append_message_text(self, project_id, message_id, delta):
+        """Commit visible text with its event so reloads cannot erase a live reply."""
+        with self.connect() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute("SELECT body FROM records WHERE id=? AND project_id=? AND category='messages'",
+                              (message_id, project_id)).fetchone()
+            if not row:
+                raise KeyError("消息不存在")
+            message = json.loads(row[0])
+            offset = len(message["text"])
+            message["text"] += delta
+            con.execute("UPDATE records SET body=? WHERE id=?", (json.dumps(message, ensure_ascii=False), message_id))
+            self._event(con, project_id, "text_delta", {"id": message_id, "delta": delta, "offset": offset})
+
     def events(self, after=0, project_id=None):
         sql = "SELECT * FROM events WHERE seq>?"
         params = [after]
