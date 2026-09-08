@@ -45,7 +45,11 @@ class Runtime:
                 if run["role"] in {"director", "visual_evidence"} and run["status"] == "running":
                     self.store.update_record(run["id"], status="interrupted", interruption="service_restart")
                     if run.get("message_id"):
-                        self.store.update_record(run["message_id"], streaming=False)
+                        try:
+                            self.store.update_record(run["message_id"], streaming=False)
+                        except KeyError:
+                            # A crash may precede insertion of the first visible message.
+                            pass
             for entry in self.store.records(project["id"], "inputs"):
                 if entry["status"] in {"pending", "processing"}:
                     self.store.update_record(entry["id"], status="pending")
@@ -225,7 +229,7 @@ class Runtime:
                 if entry["id"] in (received or attempted) and entry["status"] in {"pending", "processing"}:
                     self.store.update_record(entry["id"], status="failed")
         finally:
-            close_activity(self.store, project_id, run["id"], "interrupted" if self.store.record(run["id"])["status"] != "completed" else "ended")
+            close_activity(self.store, project_id, run["id"], self.store.record(run["id"])["status"])
             self.agents.pop(project_id, None)
             p = self.store.project(project_id)
             if p["status"] == "running":
@@ -298,7 +302,7 @@ class Runtime:
             if not self.closing and not self.store.project(pid).get("production_paused"):
                 await self.notify(pid, delivery[1], source=delivery[2], input_id=delivery[0])
         finally:
-            close_activity(self.store, pid, rid, "interrupted" if self.store.record(rid)["status"] != "completed" else "ended")
+            close_activity(self.store, pid, rid, self.store.record(rid)["status"])
 
     async def stop(self, project_id):
         self.store.stop(project_id)

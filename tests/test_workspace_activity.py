@@ -1,9 +1,11 @@
+import asyncio
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
 from movie_agent.activity import close_activity, record_event
 from movie_agent.api import create_app
+from movie_agent.runtime import Runtime
 from movie_agent.store import Store
 
 
@@ -28,6 +30,11 @@ def test_trace_distinguishes_preparation_execution_and_failure_without_arguments
         record_event(store, pid, run, SimpleNamespace(type="model_call_start", reply_id="model1"))
         record_event(store, pid, run, SimpleNamespace(type="model_call_end", reply_id="model1"))
     assert len([a for a in store.records(pid, "activities") if a.get("category") == "model"]) == 3
+    record_event(store, pid, run, SimpleNamespace(type="tool_result_end", tool_call_id="call1", state="interrupted"))
+    assert store.records(pid, "activities")[0]["status"] == "interrupted"
+    record_event(store, pid, run, SimpleNamespace(type="model_call_start", reply_id="model1"))
+    close_activity(store, pid, run["id"], "failed")
+    assert store.records(pid, "activities")[-1]["status"] == "failed"
 
 
 def test_workspace_snapshot_exposes_safe_input_status_and_rename_survives_reload(tmp_path):
@@ -55,3 +62,15 @@ def test_streamed_reply_is_durable_and_replay_has_offsets(tmp_path):
     events = [e["body"] for e in store.events() if e["kind"] == "text_delta"]
     assert [e["offset"] for e in events] == [0, 4]
     assert "".join(e["delta"] for e in events) == store.record(message["id"])["text"]
+
+
+def test_restart_before_reply_message_was_inserted(tmp_path):
+    store = Store(tmp_path)
+    pid = store.create_project()["id"]
+    run = store.put_record(pid, "runs", {"role": "director", "status": "running", "message_id": "not-yet-created"})
+    async def restart():
+        runtime = Runtime(store, None)
+        await runtime.start()
+        await runtime.close()
+    asyncio.run(restart())
+    assert store.record(run["id"])["status"] == "interrupted"

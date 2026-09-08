@@ -45,7 +45,7 @@ def record_event(store, project_id, run, event):
                 "status": "preparing" if kind == "tool_call_start" else "running"}
     else:
         state = str(event.state).lower()
-        data = {"status": "completed" if state == "success" else "failed", "finished": now()}
+        data = {"status": {"success": "completed", "interrupted": "interrupted", "denied": "denied"}.get(state, "failed"), "finished": now()}
     if item:
         store.update_record(key, **data)
     else:
@@ -53,6 +53,7 @@ def record_event(store, project_id, run, event):
 
 
 def close_activity(store, project_id, run_id, status):
+    status = {"completed": "ended", "pending": "interrupted"}.get(status, status)
     for item in store.records(project_id, "activities"):
         if item["run_id"] == run_id and item.get("status") in {"preparing", "running"}:
             store.update_record(item["id"], status=status, finished=now())

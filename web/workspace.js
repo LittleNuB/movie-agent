@@ -7,18 +7,34 @@ export const modeNames={co:'共创',auto:'托管',audio:'共创 · 声音托管'
 export const time=n=>`${String(Math.floor((n||0)/60)).padStart(2,'0')}:${String(Math.floor((n||0)%60)).padStart(2,'0')}`;
 export const date=v=>v?new Date(v).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
 export function markdown(text){
- const inline=s=>esc(s).replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
- let code=false,list=false,result='';
- for(const line of String(text||'').split('\n')){
-  if(line.startsWith('```')){if(list){result+='</ul>';list=false;}result+=code?'</code></pre>':'<pre><code>';code=!code;continue;}
+ const inline=s=>{
+  let html='',end=0;
+  for(const match of s.matchAll(/`([^`\n]+)`|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*\n]+)\*\*|\*([^*\n]+)\*/g)){
+   html+=esc(s.slice(end,match.index));
+   html+=match[1]?`<code>${esc(match[1])}</code>`:match[2]?`<a href="${esc(match[3])}" target="_blank" rel="noopener noreferrer">${esc(match[2])}</a>`:match[4]?`<strong>${esc(match[4])}</strong>`:`<em>${esc(match[5])}</em>`;
+   end=match.index+match[0].length;
+  }
+  return html+esc(s.slice(end));
+ };
+ const lines=String(text||'').split('\n'),cells=s=>s.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+ let code=false,list='',result='';
+ const closeList=()=>{if(list){result+=`</${list}>`;list='';}};
+ for(let i=0;i<lines.length;i++){
+  const line=lines[i];
+  if(line.startsWith('```')){closeList();result+=code?'</code></pre>':'<pre><code>';code=!code;continue;}
   if(code){result+=esc(line)+'\n';continue;}
-  const bullet=line.match(/^\s*(?:[-*]|\d+[.)、])\s+(.+)$/);
-  if(bullet){if(!list){result+='<ul>';list=true;}result+=`<li>${inline(bullet[1])}</li>`;continue;}
-  if(list){result+='</ul>';list=false;}
-  const head=line.match(/^(#{1,4})\s+(.+)$/);
-  result+=head?`<h3>${inline(head[2])}</h3>`:line.trim()?`<p>${inline(line)}</p>`:'<div class="paragraph-gap"></div>';
+  if(line.includes('|')&&lines[i+1]?.includes('-')&&cells(lines[i+1]).every(c=>/^:?-{3,}:?$/.test(c))){
+   closeList();result+='<div class="table-scroll"><table><thead><tr>'+cells(line).map(c=>`<th>${inline(c)}</th>`).join('')+'</tr></thead><tbody>';i++;
+   while(lines[i+1]?.includes('|')){i++;result+='<tr>'+cells(lines[i]).map(c=>`<td>${inline(c)}</td>`).join('')+'</tr>';}
+   result+='</tbody></table></div>';continue;
+  }
+  const bullet=line.match(/^\s*(?:([-*])|(\d+)[.)、])\s+(.+)$/);
+  if(bullet){const tag=bullet[2]?'ol':'ul';if(list!==tag){closeList();list=tag;result+=`<${tag}${tag==='ol'?` start="${Number(bullet[2])}"`:''}>`;}result+=`<li>${inline(bullet[3])}</li>`;continue;}
+  closeList();
+  const head=line.match(/^(#{1,6})\s+(.+)$/),quote=line.match(/^>\s?(.*)$/);
+  result+=head?`<h3>${inline(head[2])}</h3>`:quote?`<blockquote>${inline(quote[1])}</blockquote>`:line.trim()?`<p>${inline(line)}</p>`:'<div class="paragraph-gap"></div>';
  }
- return result+(list?'</ul>':'')+(code?'</code></pre>':'');
+ closeList();return result+(code?'</code></pre>':'');
 }
 export const button=(action,label,extra='')=>`<button class="button" data-action="${action}" ${extra}>${label}</button>`;
 export const activityRows=items=>items.map(a=>`<div class="activity-row ${esc(a.status)}"><i class="activity-dot"></i><span>${esc(a.label||'执行活动')}<small>${esc(roles[a.role]||a.role||'')} · ${esc(statuses[a.status]||a.status)}${a.finished?' · '+date(a.finished):''}</small></span></div>`).join('');
