@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Movie Agent · 显影</title>
+  <style>
+    :root { color: #242626; }
+    @media (prefers-color-scheme: dark) { :root { color: #ededeb; } }
+  </style>
+  <path id="reveal" fill="currentColor" d="M10 8H54A8 8 0 0 1 62 16V48A8 8 0 0 1 54 56H17L41.3 43.4Q43 42.5 43 40.5V23.7Q43 21.3 40.8 20.3L27 13.7V45L8.3 53.8Q2 56.8 2 49.8V16A8 8 0 0 1 10 8Z"/>
+</svg>

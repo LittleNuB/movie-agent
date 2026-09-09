@@ -330,7 +330,7 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
 
     @app.get("/{filename}")
     async def static(filename: str):
-        if filename not in {"app.js", "settings.js", "workspace.js", "panels.js", "styles.css", "workspace.css"}:
+        if filename not in {"app.js", "settings.js", "workspace.js", "panels.js", "styles.css", "workspace.css", "logo.svg"}:
             return JSONResponse({"error": "Not found"}, 404)
         return FileResponse(repo / "web" / filename)
 

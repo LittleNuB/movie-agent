@@ -4,7 +4,9 @@ import { reviewPanel, draftLabel, draftPanel, artifactPanel, libraryRows, librar
 
 const $ = selector => document.querySelector(selector);
 export {esc};
-export const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${({plus:'M12 5v14M5 12h14',close:'m6 6 12 12M18 6 6 18',logo:'M5 18V6l7 9 7-9v12',panel:'M4 4h16v16H4zM9 4v16',work:'M4 4h16v16H4zM15 4v16',arrow:'M12 19V5m-6 6 6-6 6 6',settings:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v3M12 19v3M2 12h3M19 12h3',film:'M4 5h16v14H4zM8 5v14M16 5v14',sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v2M12 20v2M2 12h2M20 12h2',stop:'M6 6h12v12H6z',history:'M3 4v5h5M3 9a9 9 0 1 1 1 8M12 7v6l4 2',note:'M4 4h16v12H9l-5 4zM8 8h8M8 12h5',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'})[name] || 'M6 3h8l4 4v14H6zM9 12h6M9 16h6'}"/></svg>`;
+export const icon = name => name==='logo'
+  ? '<svg class="brand-glyph" viewBox="0 0 64 64" aria-hidden="true"><use href="/logo.svg#reveal"/></svg>'
+  : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${({plus:'M12 5v14M5 12h14',close:'m6 6 12 12M18 6 6 18',panel:'M4 4h16v16H4zM9 4v16',work:'M4 4h16v16H4zM15 4v16',arrow:'M12 19V5m-6 6 6-6 6 6',settings:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v3M12 19v3M2 12h3M19 12h3',film:'M4 5h16v14H4zM8 5v14M16 5v14',sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v2M12 20v2M2 12h2M20 12h2',stop:'M6 6h12v12H6z',history:'M3 4v5h5M3 9a9 9 0 1 1 1 8M12 7v6l4 2',note:'M4 4h16v12H9l-5 4zM8 8h8M8 12h5',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'})[name] || 'M6 3h8l4 4v14H6zM9 12h6M9 16h6'}"/></svg>`;
 const ib = (action, name, label) => `<button class="icon-button" data-action="${action}" aria-label="${label}" title="${label}">${icon(name)}</button>`;
 export async function api(path, method='GET', body) {
   let response;

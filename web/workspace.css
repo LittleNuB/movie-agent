@@ -35,3 +35,23 @@ body{font-family:"Segoe UI Variable","Segoe UI","Microsoft YaHei UI",sans-serif;
 @media(max-width:1250px){.shell.with-work{grid-template-columns:190px minmax(300px,1fr) 5px minmax(340px,var(--work-width,44%))}.shell{grid-template-columns:190px minmax(0,1fr)}.chat-body{padding:0 22px}.composer-zone{padding-left:22px;padding-right:22px}.chat-header{padding-left:20px;padding-right:16px}.document{padding:22px}.new-project kbd{display:none}}
 @media(max-width:1000px){.shell.with-work{grid-template-columns:64px minmax(280px,1fr) 5px minmax(320px,var(--work-width,45%))}.shell.with-work .sidebar .brand strong,.shell.with-work .sidebar .brand-mark,.shell.with-work .project-search,.shell.with-work .sidebar-content,.shell.with-work .hide-collapsed,.shell.with-work .new-project span,.shell.with-work .connection-state{display:none}.shell.with-work .sidebar{padding:18px 10px}.shell.with-work .new-project{width:40px;padding:9px}.header-actions .button{padding:4px;font-size:10px}.chat-body{padding:0 16px}.composer-zone{padding-left:16px;padding-right:16px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* 03 · Reveal. The same silhouette is shared by the workspace and favicon. */
+.brand-glyph{display:block;fill:currentColor;stroke:none;stroke-width:0}
+.brand-mark{width:30px;height:30px;flex:none;background:none;border-radius:0;color:var(--text)}
+.brand-mark .brand-glyph{width:100%;height:100%}
+.brand{gap:10px}
+.brand strong{font-weight:600;letter-spacing:-.025em}
+.director-avatar{width:20px;height:20px;border:0;border-radius:0;color:var(--text)}
+.director-avatar .brand-glyph{width:20px;height:20px}
+.welcome-orbit{width:64px;height:64px;margin:0 0 20px;border:0;border-radius:0}
+.welcome-orbit::before{display:none}
+.welcome-orbit .brand-mark{width:64px;height:64px;border-radius:0}
+.nav-closed .brand{height:auto;flex-direction:column;gap:14px}
+.nav-closed .brand>.brand-mark{display:grid;width:28px;height:28px}
+.nav-closed .sidebar-content>*{display:none}
+@media(max-width:1000px){
+  .shell.with-work .sidebar .brand{height:auto;flex-direction:column;gap:14px}
+  .shell.with-work .sidebar .brand>.brand-mark{display:grid;width:28px;height:28px}
+  .shell.with-work .sidebar .brand .icon-button{margin:0}
+}
