@@ -25,6 +25,7 @@
 | [可点击原型规格](./plans/clickable-prototype.md) | 已实现；2026-09-06 用户暂定通过 UI |
 | [能力建设范围](./plans/capability-mvp.md) | 已获实施授权，真实电影创作与修改 MVP 进行中 |
 | [前期制作能力规格](./plans/preproduction-quality.md)与[决定](./adr/0007-preproduction-and-reference-engineering.md) | 剧本制作说明、参考依赖、镜头输入、分镜预演；已确认，工程与真实收益分别验证 |
+| [前期制作首批检查](./validation/preproduction-quality-2026-09-09.md) | Q1—Q3工具、版本与引用检查、隔离浏览器及审查；没有新增真实模型生成 |
 | [实施进度](./plans/runtime-implementation.md) | 代码、真实接入与阶段交付状态 |
 | [Windows 运行指南](./runtime-guide.md) | 4318 真实服务、模型设置与恢复 |
 | [对话工作区体验](./plans/frontend-experience.md)及[验收](./validation/frontend-experience-2026-09-08.md) | 真实活动、历史原文、草稿、输入保留与资产浏览 |
