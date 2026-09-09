@@ -24,7 +24,7 @@ from .store import Conflict, Store, uid
 
 class NewProject(BaseModel):
     title: str = Field(default="新影片", max_length=200)
-    mode: Literal["co", "auto", "audio"] = "co"
+    mode: Literal["co", "auto"] = "co"
 
 
 class ProjectTitle(BaseModel):
@@ -64,7 +64,7 @@ class AdoptInput(BaseModel):
 
 
 class ModeInput(BaseModel):
-    mode: Literal["co", "auto", "audio"]
+    mode: Literal["co", "auto"]
 
 
 class RecoveryInput(BaseModel):

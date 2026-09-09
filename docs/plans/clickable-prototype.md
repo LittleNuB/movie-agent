@@ -1,5 +1,7 @@
 # 可点击原型 · 执行规格
 
+历史原型规格：2026-09-09 用户已取消其中的声音／部分托管，正式运行版本仅保留共创和托管，见 [ADR 0008](../adr/0008-two-creation-modes.md)。其余原型记录保留当时情况。
+
 Status: ui_provisionally_accepted
 
 Date: 2026-09-06

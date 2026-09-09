@@ -56,10 +56,6 @@ class FilmTools:
         for kind, aid in basis.get("meta", {}).get("basis", {}).items():
             if kind in {"script", "visual_plan", "trial"} and p["adopted"].get(kind) != aid:
                 raise Conflict("制作依据已经过时，请先核对新版本")
-        if p["mode"] == "audio" and purpose in {"voice", "music", "sfx"}:
-            if "script" not in p["adopted"]:
-                raise Conflict("故事与剧本仍需共创审核后再进入声音制作")
-            return
         required = {"visual": ["script"], "trial": ["script", "visual_plan"],
                     "production": ["script", "visual_plan", "trial"], "edit": ["edit_plan"]}.get(stage)
         if required is None:
@@ -100,8 +96,7 @@ class FilmTools:
             if review["artifact_id"] == artifact_id and (review["status"] == "pending"
                     or review["status"] == "approved" and p["adopted"].get(artifact["kind"]) == artifact_id):
                 return review
-        auto = p["mode"] == "auto" or (p["mode"] == "audio" and artifact["kind"] == "edit_plan"
-                                       and artifact.get("meta", {}).get("scope") == "audio")
+        auto = p["mode"] == "auto"
         review = self.store.put_record(project_id, "reviews", {
             "artifact_id": artifact_id, "kind": artifact["kind"], "question": question,
             "base": p["adopted"].get(artifact["kind"]), "status": "pending",

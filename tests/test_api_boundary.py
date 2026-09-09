@@ -68,3 +68,17 @@ def test_accepted_message_survives_before_runtime_delivery(tmp_path):
         response = client.post(f"/api/projects/{pid}/messages", json={"client_id": "crash-window", "text": "Keep this input"})
         assert response.status_code == 200
         assert len(store.records(pid, "inputs")) == 1
+
+
+def test_creation_modes_reject_retired_audio_option(tmp_path):
+    app = create_app(tmp_path, vault=MemoryVault(), enable_runtime=False)
+    with TestClient(app, base_url="http://127.0.0.1:4318") as client:
+        for mode in ["co", "auto"]:
+            project = client.post("/api/projects", json={"mode": mode}).json()
+            pid = project["id"]
+            assert project["mode"] == mode
+            assert client.put(f"/api/projects/{pid}/mode", json={"mode": "audio"}).status_code == 422
+            assert app.state.store.project(pid)["mode"] == mode
+            assert app.state.store.records(pid, "inputs") == []
+        assert client.post("/api/projects", json={"mode": "audio"}).status_code == 422
+        assert len(app.state.store.projects()) == 2

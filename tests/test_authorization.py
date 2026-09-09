@@ -6,6 +6,53 @@ from movie_agent.film_tools import FilmTools
 from movie_agent.store import Conflict, Store
 
 
+def test_retired_audio_mode_preserves_history_and_requires_co_creation_review(tmp_path):
+    store = Store(tmp_path)
+    pid = store.create_project()["id"]
+    script = store.create_artifact(pid, "script", "Existing script", "Keep this story")
+    store.adopt(pid, script["id"], None)
+    store.save_draft(pid, "Keep hand edits", 0)
+    legacy_review = store.put_record(pid, "reviews", {
+        "mode": "audio", "status": "approved", "kind": "script", "artifact_id": script["id"]})
+    original = store.project(pid)
+    # Seed an older database, bypassing the current write API only in this fixture.
+    with store.connect() as con:
+        con.execute("UPDATE projects SET body=? WHERE id=?", (json.dumps({**original, "mode": "audio"}), pid))
+    store = Store(tmp_path)
+    migrated = store.project(pid)
+    assert migrated["mode"] == "co"
+    assert {k: v for k, v in migrated.items() if k not in {"mode", "updated"}} == {
+        k: v for k, v in original.items() if k not in {"mode", "updated"}}
+    assert store.record(legacy_review["id"]) == legacy_review
+    assert store.records(pid, "inputs") == []
+    with store.connect() as con:
+        event_count = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+    store = Store(tmp_path)
+    with store.connect() as con:
+        assert con.execute("SELECT COUNT(*) FROM events").fetchone()[0] == event_count
+    film = FilmTools(store, None, None, None, None)
+    with pytest.raises(Conflict):
+        film.check_gate(pid, "production", "voice", script["id"])
+    edit = store.create_artifact(pid, "edit_plan", "Replace music", meta={"scope": "audio"})
+    review = film.request_review(pid, edit["id"], "Confirm music change")
+    assert review["status"] == "pending"
+    assert "edit_plan" not in store.project(pid)["adopted"]
+    for mode in ["audio", "unknown"]:
+        with pytest.raises(ValueError):
+            store.create_project(mode=mode)
+        with pytest.raises(ValueError):
+            store.update_project(pid, mode=mode)
+
+
+def test_auto_mode_still_approves_audio_edit_plan(tmp_path):
+    store = Store(tmp_path)
+    pid = store.create_project(mode="auto")["id"]
+    edit = store.create_artifact(pid, "edit_plan", "Replace music", meta={"scope": "audio"})
+    review = FilmTools(store, None, None, None, None).request_review(pid, edit["id"], "Apply change")
+    assert review["status"] == "approved"
+    assert store.project(pid)["adopted"]["edit_plan"] == edit["id"]
+
+
 async def test_export_only_keeps_source_dialogue_and_subtitles_without_rebuilding_timeline(tmp_path):
     from test_api_boundary import MemoryVault
 

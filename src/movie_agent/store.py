@@ -38,6 +38,14 @@ class Store:
                     kind TEXT NOT NULL, body TEXT NOT NULL, created TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS settings (id TEXT PRIMARY KEY, body TEXT NOT NULL);
             """)
+            # Retire the former audio delegation mode without rewriting history or
+            # delivering new work. Already submitted jobs keep their own receipts.
+            con.execute("BEGIN IMMEDIATE")
+            for row in con.execute("SELECT body FROM projects WHERE json_extract(body, '$.mode')='audio'").fetchall():
+                project = json.loads(row[0])
+                project["mode"] = "co"
+                self._save_project(con, project)
+                self._event(con, project["id"], "project", project)
 
     @contextmanager
     def connect(self):
@@ -67,7 +75,7 @@ class Store:
                     (project_id, kind, json.dumps(data, ensure_ascii=False), now()))
 
     def create_project(self, title="新影片", mode="co"):
-        if mode not in {"co", "auto", "audio"}:
+        if mode not in {"co", "auto"}:
             raise ValueError("未知创作模式")
         p = {"id": uid(), "title": title, "mode": mode, "epoch": 0, "adopted": {},
              "draft": {"text": "", "revision": 0, "submitted_revision": None},
@@ -90,6 +98,8 @@ class Store:
         allowed = {"title", "mode", "status", "production_paused"}
         if set(changes) - allowed:
             raise ValueError("不可直接修改项目版本")
+        if "mode" in changes and changes["mode"] not in {"co", "auto"}:
+            raise ValueError("未知创作模式")
         with self.connect() as con:
             con.execute("BEGIN IMMEDIATE")
             p = self._project(con, project_id)

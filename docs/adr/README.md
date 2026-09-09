@@ -11,5 +11,6 @@
 | [0005：后续视频使用 720P](./0005-720p-production.md) | 生成规格被 0006 取代；720P 导出仍有效 |
 | [0006：H3 768P 与 Seedance Fast 720P](./0006-provider-resolution-and-seedance-fast.md) | Accepted；最新个人模型与生成规格 |
 | [0007：剧本制作说明与参考资产工程](./0007-preproduction-and-reference-engineering.md) | Accepted；前移制作设计与参考工程，实施和真实收益分别验证 |
+| [0008：仅保留共创和托管](./0008-two-creation-modes.md) | Accepted；取代0003中的部分托管条款，旧声音托管项目归入共创 |
 
 改变已确认决定时追加新 ADR 并明确取代关系。实现细节尚未确定的地方保留为待实施设计，不从框架名称推断产品能力。
