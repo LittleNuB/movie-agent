@@ -8,6 +8,7 @@
 
 | 任务 | 状态 | 依据 |
 |---|---|---|
+| [公开源码与开发预览发行](../adr/0009-public-source-release.md) | 整理当前实现、公共 README、MIT 与源码预览包；具体检查见[发布记录](../validation/public-release-2026-09-09.md)，发行提交以 GitHub Release 为准 | 2026-09-09 用户要求打包同步并开源，另明确保留原提交信息 |
 | [Logo与UI视觉优化](../plans/ui-visual-polish.md) | 第一批欢迎页、对话与可读性已实现，[检查记录](../validation/ui-visual-batch1-2026-09-09.md)保留动态复核限制；待人评，后续批次继续 | 2026-09-09 用户选择03、接受方案并要求开始 |
 | [独立私有仓库与文档初始化](../plans/repository-initialization.md) | 已完成并推送；检查结果见验收记录 | 所有者明确要求按初始化计划建仓、提交与推送 |
 | [可点击原型](../plans/clickable-prototype.md) | 已实现于 `prototype/film-creation`；2026-09-06 用户暂定通过 UI，浏览器结果单独记录 | 所有者最新明确反馈 |

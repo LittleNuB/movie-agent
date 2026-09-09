@@ -21,5 +21,10 @@ parameters are validated separately. This does not claim its entire production p
 AgentScope is a pinned dependency in `uv.lock`; its own package license remains
 with that distribution. FFmpeg is downloaded as a local tool during setup from
 Gyan's published Windows build, checksum verified, with the archive's license
-and build configuration retained. These third-party notices do not select a
-license for the movie-agent project itself.
+and build configuration retained. FFmpeg binaries and dependency environments
+are not included in the source release.
+
+The movie-agent project is released under [MIT](../LICENSE) as of 2026-09-09.
+This project license does not replace the licenses of ViMax, AgentScope,
+FFmpeg or any other third-party dependency. AdCraft and OpenMontage are
+research references; their full runtimes are not included.

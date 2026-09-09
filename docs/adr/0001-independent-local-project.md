@@ -2,6 +2,8 @@
 
 Status: Accepted
 
+2026-09-09 更新：下述私有发布与许可待定条款已由 [ADR 0009](./0009-public-source-release.md) 取代，其余决定继续有效。
+
 Date: 2026-09-06
 
 ## 背景与决定

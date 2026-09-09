@@ -21,6 +21,7 @@
 
 | 文档 | 状态与用途 |
 |---|---|
+| [公开源码与预览发行](./adr/0009-public-source-release.md)及[发布检查](./validation/public-release-2026-09-09.md) | 当前源码采用 MIT 公开；源码包、运行方式与质量边界见根 README，旧私有建仓记录作为历史保留 |
 | [Logo与UI视觉优化](./plans/ui-visual-polish.md) | 03「显影」已接入；方案已接受，第一批欢迎页与对话区已实现，见[检查与限制](./validation/ui-visual-batch1-2026-09-09.md)；待人评与后续批次 |
 | [任务记录](./agents/issue-tracker.md) | 本地文档任务入口，不自动创建 GitHub Issues |
 | [可点击原型规格](./plans/clickable-prototype.md) | 已实现；2026-09-06 用户暂定通过 UI |

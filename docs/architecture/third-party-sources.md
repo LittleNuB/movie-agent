@@ -28,3 +28,7 @@
 [生成质量研究](../research/generation-quality-2026-09-09/report.html)核对了上述三个固定版本。ViMax为MIT；AdCraft为个人及非商业许可，不能默认商用；OpenMontage为AGPL-3.0。许可原文入口位于报告第6节，复制实现或文档时仍须记录具体来源和声明。
 
 按[ADR 0007](../adr/0007-preproduction-and-reference-engineering.md)优先复用ViMax人物派生、选参考和镜头分解方法；吸收AdCraft的父资产与状态关系、OpenMontage的镜头意图和输入编译思路。DOC／Re³用于分层事件与相关上下文的方法参考。GroundShot为有条件的研究证据，未确认可直接引入的公开代码包。当前决定不导入它们的整套运行时，也不选择新的本项目许可证。
+
+## 2026-09-09 公开源码补充
+
+后续发布授权见 [ADR 0009](../adr/0009-public-source-release.md)，项目现采用 [MIT](../../LICENSE)。这一选择取代上文当时的本项目许可待定状态；第三方许可、具体改写来源与依赖边界继续按[当前来源声明](../../third_party/README.md)保留。

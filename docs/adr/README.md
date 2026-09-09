@@ -4,7 +4,7 @@
 
 | ADR | 状态 |
 |---|---|
-| [0001：独立仓库与 Windows 本地个人部署](./0001-independent-local-project.md) | Accepted |
+| [0001：独立仓库与 Windows 本地个人部署](./0001-independent-local-project.md) | Accepted；私有／许可待定条款被 0009 取代 |
 | [0002：运行框架与电影领域复用](./0002-runtime-and-domain-reuse.md) | Accepted；具体接入未验证 |
 | [0003：创作控制、修改与证据边界](./0003-creative-control-and-evidence.md) | Accepted；产品能力待实现 |
 | [0004：模型选择属于用户配置](./0004-user-configured-models.md) | Accepted；取代固定产品模型预设，保留个人选型 |
@@ -12,5 +12,6 @@
 | [0006：H3 768P 与 Seedance Fast 720P](./0006-provider-resolution-and-seedance-fast.md) | Accepted；最新个人模型与生成规格 |
 | [0007：剧本制作说明与参考资产工程](./0007-preproduction-and-reference-engineering.md) | Accepted；前移制作设计与参考工程，实施和真实收益分别验证 |
 | [0008：仅保留共创和托管](./0008-two-creation-modes.md) | Accepted；取代0003中的部分托管条款，旧声音托管项目归入共创 |
+| [0009：公开源码与开发预览发行](./0009-public-source-release.md) | Accepted；MIT、公开当前源码、保留原提交信息及数据保护 |
 
 改变已确认决定时追加新 ADR 并明确取代关系。实现细节尚未确定的地方保留为待实施设计，不从框架名称推断产品能力。

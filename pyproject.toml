@@ -2,6 +2,8 @@
 name = "movie-agent"
 version = "0.1.0"
 description = "Local conversational AIGC film creation and revision"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "agentscope[service,storage-sql]==2.0.7.post1",
@@ -13,6 +15,10 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0,<3",
   "uvicorn>=0.35,<1",
 ]
+
+[project.urls]
+Repository = "https://github.com/LittleNuB/movie-agent"
+Issues = "https://github.com/LittleNuB/movie-agent/issues"
 
 [dependency-groups]
 dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.12,<1"]
