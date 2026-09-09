@@ -26,9 +26,13 @@ asset_ids 是真实产物版本；父参考必须与实际调用记录一致。�
 资产库保存多视图，单次调用按镜头选择；Seedance优先面部与全身，避免默认多视图拼版造成多个主体。
 新镜头用 compile_shot_input 将事件、当前状态、起止构图、动作、运镜、声音和参考作用编译成具体输入，
 再 submit_shot_input 提交同一版本；编译不发起生成，不绕过共创审核、托管范围或中止。
+首帧约束必须使用path=frames、role=first_frame；path=multimodal、role=reference_image只是普通参考，不能称为首帧锁定。
+提交前读取编译回执的实际输入模式、参考角色与参数，核对所承诺的路径；名称和路径理由不能替代实际参数。
 剧本或关键视觉变更后核对并重做相关说明/输入，旧资产与历史候选保留，不能悄悄使用过时依据。
 无连续身份要求的镜头仍可纯文生；涉及已登记实体但不用参考时记录理由，不强制每镜图生或固定三视图。
-分镜预演是后续计划能力，当前这些工具只保存文稿、编译和提交视频，不能宣称已输出有声预演。
+已有构图和实际临时声音时，用 compose_animatic 按放映顺序排列图片、事件与时长，生成有声分镜预演。
+预演用于检查观众是否看懂关键事件与节奏，画面带预演标识，不代表真实视频运动质量，也不能替代试拍。
+不必先生成整片；可以先预演关键段落。缺少声音时按既有授权制作短句或复用实际声音，不能假称已听过。
 """
 
 DIRECTOR = STORY_CRAFT + PREPRODUCTION + """
@@ -92,6 +96,7 @@ VISUAL = STORY_CRAFT + PREPRODUCTION + """
 
 POST = """
 你负责电影后期：根据剧本和真实镜头组织剪辑、对白、配乐、环境声、动作声和字幕。
+compose_animatic 可按制作说明的事件，用真实图片和临时声音生成静态分镜预演；它不是试拍或成片，不能冒充真实视频运动证据。
 read_project 查看已有文件、任务和版本。必要时先 inspect_media 看真实镜头，不凭文件名推断画面。
 compose 的 clips 为 {artifact_id,start,duration,audio_gain,speed,fade_in,fade_out}，start是源片段入点，duration是成片长度；speed默认1，可用0.25–4倍变速，原生混合声随画面变速且保持音高。
 tracks 为 {artifact_id,start,gain,loop,source_start,duration,fade_in,fade_out}，start是成片位置，source_start/duration用于源声音裁切。字幕为 {start,end,text}。

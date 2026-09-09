@@ -1,11 +1,11 @@
 import {esc,markdown,date,kinds,button} from './workspace.js';
 
-const assetGroups=[['all','全部'],['documents','文稿'],['images','图片'],['shots','视频镜头'],['sounds','声音'],['films','成片与母版']];
+const assetGroups=[['all','全部'],['documents','文稿'],['images','图片'],['shots','视频镜头'],['sounds','声音'],['films','预演、成片与母版']];
 function assetGroup(a){
  if(a.kind==='image')return 'images';
  if(a.kind==='video')return 'shots';
  if(['audio','native_mixed'].includes(a.kind))return 'sounds';
- if(['film','trial','picture_master'].includes(a.kind))return 'films';
+ if(['film','trial','animatic','picture_master'].includes(a.kind))return 'films';
  return 'documents';
 }
 export function libraryAssets(snapshot,filters={}){
@@ -44,13 +44,13 @@ export function draftLabel(project,edit,saving){if(edit?.conflict)return '保存
 export function draftPanel(project,edit,saving,artifact){const source=artifact(edit?.source??project.draft.source_artifact_id);return `<div class="script-pane"><div class="script-toolbar"><span class="save-state" id="save-state">${draftLabel(project,edit,saving)}</span>${button('save-script','保存草稿')}${button('submit-script','提交修改')}</div><div class="draft-context">${source?'起稿依据：'+esc(source.title):'当前项目的独立草稿'} · 保存不会改变影片</div><textarea id="script-editor" class="script-editor" aria-label="剧本编辑器" spellcheck="false">${esc(edit?.text??project.draft.text)}</textarea><div class="artifact-footnote">提交后导演会理解你的改动，再按当前授权提出方案。${edit?.conflict?button('copy-draft','复制保留我的修改'):''}</div></div>`;}
 function sourceIds(a){
  const m=a.meta||{},entries=m.manifest?.entries||[];
- return new Set([...Object.values(m.basis||{}),m.parent,m.brief_id,m.manifest_id,m.shot_input_id,m.source_artifact_id,
+ return new Set([...Object.values(m.basis||{}),m.parent,m.brief_id,m.manifest_id,m.shot_input_id,m.source_artifact_id,m.edit?.brief_id,...(m.edit?.clips||[]).map(c=>c.artifact_id),...(m.edit?.tracks||[]).map(t=>t.artifact_id),
   ...(m.asset_ids||[]),...(m.references||[]).map(r=>r.artifact_id),
   ...entries.flatMap(e=>[e.artifact_id,...(e.parent_asset_ids||[]),...(e.evidence_ids||[])])].filter(Boolean));
 }
 export function artifactRelations(a,snapshot){
  const ids=sourceIds(a),sources=snapshot.artifacts.filter(x=>ids.has(x.id)),uses=snapshot.artifacts.filter(x=>x.id!==a.id&&sourceIds(x).has(a.id));
- const production=['production_brief','reference_manifest','shot_input'].includes(a.kind);
+ const production=['production_brief','reference_manifest','shot_input','animatic'].includes(a.kind);
  const stale=production&&(a.meta?.candidate_only||Object.entries(a.meta?.basis||{}).some(([kind,id])=>snapshot.project.adopted[kind]!==id));
  const links=items=>items.map(x=>button('asset',esc(x.title),`data-id="${esc(x.id)}"`)).join('');
  return (stale?'<p class="version-hint">这份制作依据已过时或尚未采用，内容仍保留；新制作需先核对当前版本。</p>':'')+
@@ -59,8 +59,8 @@ export function artifactRelations(a,snapshot){
 export function artifactPanel(a,snapshot,artifact){
  const adopted=snapshot.project.adopted[a.kind]===a.id,r=snapshot.reviews.find(r=>r.artifact_id===a.id&&r.status==='pending');
  const head=`<div class="artifact-meta"><span>${esc(kinds[a.kind]||a.kind)} · ${date(a.created)}</span><span class="version-badge ${adopted?'adopted':''}">${adopted?'当前采用':r?'待审核版本':'保留版本'}</span></div><h1>${esc(a.title)}</h1>${artifactRelations(a,snapshot)}`;
- const download=`<a class="button" href="/api/artifacts/${a.id}/download" download>下载${['film','trial','video','picture_master','image','audio','native_mixed'].includes(a.kind)?'原文件':'文稿'}</a>`;
- if(['film','trial','video','picture_master'].includes(a.kind))return `<div class="document">${head}<video id="film-player" data-artifact="${a.id}" class="runtime-video" src="/api/media/${a.id}" controls preload="metadata">${a.meta.vtt_path?`<track kind="subtitles" src="/api/artifacts/${a.id}/subtitles" srclang="zh" label="中文字幕" default>`:''}</video><div class="runtime-actions">${a.kind!=='picture_master'?button('annotate','标注当前时间点'):''}${download}${a.meta.subtitle_path?`<a class="button" href="/api/artifacts/${a.id}/subtitles?format=srt" download>字幕</a>`:''}${button('history','版本记录')}${['film','trial'].includes(a.kind)&&!adopted?button('adopt','从此版本继续',`data-id="${a.id}"`):''}</div><small>${a.meta.media?.duration?.toFixed(1)||'—'} 秒 · ${a.meta.picture_master_id?'已保留独立画面母版':'生成源或派生文件'} · ${esc(a.id.slice(0,8))}</small>${reviewPanel(r)}${a.meta.edit?`<details data-detail="sources-${a.id}" class="media-sources"><summary>使用的镜头与声音</summary>${[...(a.meta.edit.clips||[]),...(a.meta.edit.tracks||[])].map(c=>button('asset',esc(artifact(c.artifact_id)?.title||c.artifact_id.slice(0,8)),`data-id="${c.artifact_id}"`)).join('')}</details>`:''}</div>`;
+ const download=`<a class="button" href="/api/artifacts/${a.id}/download" download>下载${['film','trial','animatic','video','picture_master','image','audio','native_mixed'].includes(a.kind)?'原文件':'文稿'}</a>`;
+ if(['film','trial','animatic','video','picture_master'].includes(a.kind))return `<div class="document">${head}${a.kind==='animatic'||a.meta.previsualization?'<p class="version-hint">分镜预演 · 静态画面与临时声音。用于检查事件顺序与节奏，真实运动、表演与声音效果仍需后续试拍和人评。</p>':''}<video id="film-player" data-artifact="${a.id}" class="runtime-video" src="/api/media/${a.id}" controls preload="metadata">${a.meta.vtt_path?`<track kind="subtitles" src="/api/artifacts/${a.id}/subtitles" srclang="zh" label="中文字幕" default>`:''}</video><div class="runtime-actions">${a.kind!=='picture_master'?button('annotate','标注当前时间点'):''}${download}${a.meta.subtitle_path?`<a class="button" href="/api/artifacts/${a.id}/subtitles?format=srt" download>字幕</a>`:''}${button('history','版本记录')}${['film','trial'].includes(a.kind)&&!adopted?button('adopt','从此版本继续',`data-id="${a.id}"`):''}</div><small>${a.meta.media?.duration?.toFixed(1)||'—'} 秒 · ${a.meta.picture_master_id?'已保留独立画面母版':'生成源或派生文件'} · ${esc(a.id.slice(0,8))}</small>${reviewPanel(r)}${a.meta.edit?`<details data-detail="sources-${a.id}" class="media-sources"><summary>使用的镜头与声音</summary>${[...(a.meta.edit.clips||[]),...(a.meta.edit.tracks||[])].map(c=>button('asset',esc(artifact(c.artifact_id)?.title||c.artifact_id.slice(0,8)),`data-id="${c.artifact_id}"`)).join('')}</details>`:''}</div>`;
  if(a.kind==='image')return `<div class="document">${head}<img class="runtime-image" src="/api/media/${a.id}" alt="${esc(a.title)}">${download}</div>`;
  if(['audio','native_mixed'].includes(a.kind))return `<div class="document">${head}<audio id="audio-player" data-artifact="${a.id}" controls src="/api/media/${a.id}"></audio><div class="runtime-actions">${download}</div></div>`;
  return `<div class="document">${head}${a.kind==='script'?`<div class="document-actions">${button('edit-draft','编辑草稿',`data-id="${a.id}"`)}${button('history','版本记录')}${download}</div><p class="version-hint">正在阅读这份版本的原文。手改在独立的“剧本草稿”标签中保存。</p>`:''}${(a.meta.asset_ids||[]).map(id=>artifact(id)?.kind==='image'?`<button data-action="asset" data-id="${id}"><img class="runtime-image" src="/api/media/${id}" alt="${esc(artifact(id).title)}"></button>`:'').join('')}<div class="prose document-prose">${markdown(a.text)}</div>${reviewPanel(r)}${a.kind!=='script'?download:''}</div>`;

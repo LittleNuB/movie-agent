@@ -57,6 +57,94 @@ def compile_input(w):
                          {"duration": 5, "resolution": "768P"}, None, "visual")
 
 
+async def test_animatic_tool_is_local_version_bound_and_cannot_be_trial(world):
+    w = world
+    sound = w.store.create_artifact(w.pid, "audio", "临时声音", path=w.image["path"])
+    boards = [{"artifact_id": w.image["id"], "event_ids": ["E1"], "duration": 2}]
+    tracks = [{"artifact_id": sound["id"]}]
+    jobs = Jobs(w.store, None, None)  # local composition needs no provider configuration
+    film = FilmTools(w.store, None, None, jobs, None)
+    jobs.gate = film.check_gate
+    tool = {t.name: t for t in film.for_agent(w.pid, "director")}["compose_animatic"]
+    try:
+        assert "event_ids" in json.dumps(tool.input_schema)
+        result = await tool(title="预演", request_key="previs-v1", brief_id=w.brief["id"], boards=boards, tracks=tracks)
+        assert result.state == "success"
+        job = json.loads(result.content[0].text)
+        assert job["binding"] is None and job["status"] == "pending"
+        assert w.store.project(w.pid)["adopted"] == {"script": w.script["id"]}
+        for bad in ({**job["args"], "kind": "trial"}, {**job["args"], "clips": []}):
+            with pytest.raises(ValueError):
+                await jobs.submit(w.pid, "compose", "伪装试拍", "bad", bad)
+        with pytest.raises(ValueError):
+            film.check_gate(w.pid, "animatic", "video", w.brief["id"])
+        other = w.store.create_project()["id"]
+        foreign = w.store.create_artifact(other, "image", "其他项目", path=w.image["path"])
+        with pytest.raises(KeyError):
+            w.pre.animatic_plan(w.pid, w.brief["id"], [{**boards[0], "artifact_id": foreign["id"]}], tracks)
+        with pytest.raises(ValueError):
+            w.pre.animatic_plan(w.pid, w.brief["id"], [{**boards[0], "event_ids": ["missing"]}], tracks)
+        with pytest.raises(ValueError):
+            w.pre.animatic_plan(w.pid, w.brief["id"], boards, [])
+        half = w.pre.animatic_plan(w.pid, w.brief["id"],
+            [{**boards[0], "duration": d} for d in [1.5 / 24, 1 / 24]], tracks)
+        assert [c["duration"] * 24 for c in half["clips"]] == [2, 1]
+        with pytest.raises(ValueError):
+            w.pre.animatic_plan(w.pid, w.brief["id"], [{**boards[0], "duration": 0.1}],
+                                [{"artifact_id": sound["id"], "start": 0.09}])
+        w.store.stop(w.pid)
+        stopped = await tool(title="预演", request_key="stopped", brief_id=w.brief["id"], boards=boards, tracks=tracks)
+        assert stopped.state == "error"
+        w.store.update_project(w.pid, production_paused=False)
+        newer = w.store.create_artifact(w.pid, "script", "改后剧本")
+        w.store.adopt(w.pid, newer["id"], w.script["id"])
+        await jobs._run(job["id"])
+        assert w.store.record(job["id"])["status"] == "failed"
+        assert "过时" in w.store.record(job["id"])["error"]
+    finally:
+        await jobs.close()
+
+
+async def test_animatic_encodes_real_boards_and_audio_without_native_sound_claim(world):
+    import array
+
+    from movie_agent.media import Media
+
+    w = world
+    media = Media(w.store)
+    if not media.ffmpeg:
+        pytest.skip("FFmpeg required for actual previsualization test")
+    images = []
+    for color in ["red", "blue"]:
+        path = w.store.root / "media" / (color + ".png")
+        await media.execute([media.ffmpeg, "-v", "error", "-y", "-f", "lavfi", "-i",
+                             f"color=c={color}:s=160x90", "-frames:v", "1", path])
+        images.append(w.store.create_artifact(w.pid, "image", color, path=path.relative_to(w.store.root).as_posix()))
+    tone = w.store.root / "media" / "tone.wav"
+    await media.execute([media.ffmpeg, "-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=1", tone])
+    sound = w.store.create_artifact(w.pid, "audio", "受控测试音", path=tone.relative_to(w.store.root).as_posix())
+    plan = w.pre.animatic_plan(w.pid, w.brief["id"],
+        [{"artifact_id": i["id"], "event_ids": ["E1"], "duration": 0.1} for i in [*images, images[0]]], [{"artifact_id": sound["id"]}])
+    result = await media.render({"id": "previs-real", "project_id": w.pid, "title": "分镜预演", "args": plan})
+    assert result["previsualization"] and result["native_audio_id"] is None
+    assert result["audio_review"] == "not_performed"
+    assert w.store.record(result["picture_master_id"])["meta"]["previsualization"]
+    assert abs(result["media"]["duration"] - 7 / 24) < 0.015
+    path = w.store.media_path(result["path"])
+    for position, channel in [(0.02, 0), (0.12, 2), (0.23, 0)]:
+        raw = await media.execute([media.ffmpeg, "-v", "error", "-ss", position, "-i", path, "-frames:v", "1",
+            "-vf", "crop=2:2:640:360", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"])
+        assert raw[channel] > 200 and raw[(channel+1) % 3] < 10
+    raw = await media.execute([media.ffmpeg, "-v", "error", "-i", path, "-vn", "-f", "s16le", "-"])
+    values = array.array("h", raw)
+    assert max(abs(v) for v in values) > 1000
+    preview = w.store.create_artifact(w.pid, "animatic", "预演", meta=result, path=result["path"])
+    for aid in [preview["id"], result["picture_master_id"], images[0]["id"]]:
+        with pytest.raises(ValueError, match="不能充当"):
+            await media.render({"id": "cannot-trial-"+aid, "project_id": w.pid, "title": "试拍", "args": {
+                "kind": "trial", "clips": [{"artifact_id": aid, "duration": 0.5}]}})
+
+
 def test_documents_keep_drafts_and_adoption_separate_and_reopen(world):
     w = world
     assert w.store.project(w.pid)["adopted"] == {"script": w.script["id"]}

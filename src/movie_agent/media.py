@@ -75,6 +75,10 @@ class Media:
         if not self.ffmpeg:
             raise ValueError("请先安装 FFmpeg")
         plan, pid, jid = job["args"], job["project_id"], job["id"]
+        animatic = plan.get("kind") == "animatic"
+        if animatic or plan.get("stage") == "animatic":
+            from .preproduction import Preproduction
+            Preproduction(self.store).validate_animatic(pid, "compose", plan)
         folder = self.store.root / "media" / jid
         folder.mkdir(parents=True, exist_ok=True)
         clips = plan["clips"]
@@ -109,7 +113,9 @@ class Media:
             if compare(clips) != compare(prior_clips):
                 raise ValueError("镜头剪辑发生变化，不能沿用旧画面母版")
         for index, clip in enumerate(clips):
-            _, source = self.source(clip["artifact_id"], pid)
+            source_artifact, source = self.source(clip["artifact_id"], pid)
+            if not animatic and (source_artifact["kind"] in {"image", "animatic"} or source_artifact.get("meta", {}).get("previsualization")):
+                raise ValueError("静态分镜预演不能充当真实试拍或影片镜头")
             metadata = await self.probe(source)
             video_stream = next((s for s in metadata["streams"] if s["codec_type"] == "video"), {})
             source_conversions.append({"artifact_id": clip["artifact_id"], "source_width": video_stream.get("width"),
@@ -118,7 +124,7 @@ class Media:
             speed = seconds(clip.get("speed", 1), 0.25)
             if speed > 4:
                 raise ValueError("基础变速范围为0.25–4倍")
-            if start + length * speed > metadata["duration"] + 0.08:
+            if not animatic and start + length * speed > metadata["duration"] + 0.08:
                 raise ValueError(f"镜头 {index + 1} 超出源素材时长")
             part = folder / f"picture_{index:03}.mp4"
             if not old_master:
@@ -130,7 +136,13 @@ class Media:
                     video_filter += f",fade=t=in:st=0:d={fade_in}"
                 if fade_out:
                     video_filter += f",fade=t=out:st={length-fade_out}:d={fade_out}"
-                await self.execute([self.ffmpeg, "-v", "error", "-y", "-ss", start, "-i", source,
+                source_args = ["-ss", start, "-i", source]
+                if animatic:
+                    source_args = ["-loop", "1", "-framerate", "24", "-i", source]
+                    font = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts/arial.ttf"
+                    font_option = "fontfile='" + font.as_posix().replace(":", "\\:") + "':" if font.is_file() else ""
+                    video_filter += f",drawtext={font_option}text='STORYBOARD PREVIEW':x=24:y=24:fontsize=24:fontcolor=white:box=1:boxcolor=black@0.7:boxborderw=8"
+                await self.execute([self.ffmpeg, "-v", "error", "-y", *source_args,
                     "-t", length, "-an", "-vf", video_filter,
                     "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", part], job_id=jid)
                 picture_parts.append(part)
@@ -177,7 +189,7 @@ class Media:
             await self.execute([self.ffmpeg, "-v", "error", "-y", "-f", "concat", "-safe", "1", "-i", listing,
                                 "-c", "copy", "-movflags", "+faststart", picture], job_id=jid)
             master = self.store.create_artifact(pid, "picture_master", job["title"] + " · 画面母版",
-                meta={"clips": clips, "duration": duration, "resolution": "720p"}, path=picture.relative_to(self.store.root).as_posix())
+                meta={"clips": clips, "duration": duration, "resolution": "720p", "previsualization": animatic}, path=picture.relative_to(self.store.root).as_posix())
             master_id = master["id"]
         listing = folder / "native-list.txt"
         listing.write_text("\n".join(f"file '{p.name}'" for p in native_parts), encoding="utf-8")
@@ -231,7 +243,7 @@ class Media:
             (folder / "subtitles.vtt").write_text("WEBVTT\n\n" + "\n\n".join(
                 f'{timestamp(c["start"]).replace(",", ".")} --> {timestamp(c["end"]).replace(",", ".")}\n{c["text"]}'
                 for c in subtitles), encoding="utf-8")
-        output = folder / "film.mp4"
+        output = folder / ("storyboard-preview.mp4" if animatic else "film.mp4")
         # A selectable subtitle stream preserves an exact reusable picture master.
         if subtitles:
             input_insert = command.index("-filter_complex")
@@ -241,17 +253,19 @@ class Media:
         command += ["-movflags", "+faststart", output]
         await self.execute(command, job_id=jid)
         info = await self.probe(output)
-        native_artifact = self.store.create_artifact(pid, "audio", job["title"] + " · 原生混合声",
+        native_artifact = None if animatic else self.store.create_artifact(pid, "audio", job["title"] + " · 原生混合声",
             meta={"purpose": "native_mixed", "media": await self.probe(native), "job_id": jid, "clips": clips},
             path=native.relative_to(self.store.root).as_posix())
         return {"path": output.relative_to(self.store.root).as_posix(), "picture_master_id": master_id,
-                "native_audio_id": native_artifact["id"],
-                "native_audio_path": native.relative_to(self.store.root).as_posix(),
+                "native_audio_id": native_artifact["id"] if native_artifact else None,
+                "native_audio_path": native.relative_to(self.store.root).as_posix() if native_artifact else None,
                 "subtitle_path": srt.relative_to(self.store.root).as_posix() if subtitles else None,
                 "vtt_path": (folder / "subtitles.vtt").relative_to(self.store.root).as_posix() if subtitles else None,
                 "edit": plan, "media": info, "picture_sha256": hashlib.sha256(picture.read_bytes()).hexdigest(),
                 "output_resolution": "720p", "source_conversions": source_conversions,
-                "requested_master_id": requested_master_id}
+                "requested_master_id": requested_master_id, "previsualization": animatic,
+                "brief_id": plan.get("brief_id"),
+                "audio_review": "not_performed" if animatic else None}
 
     async def extract_frame(self, project_id, artifact_id, time, title):
         artifact, source = self.source(artifact_id, project_id)

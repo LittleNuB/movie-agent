@@ -52,6 +52,7 @@ class Jobs:
         await self.client.aclose()
 
     async def submit(self, project_id, purpose, title, request_key, args):
+        Preproduction(self.store).validate_animatic(project_id, purpose, args)
         args = Preproduction(self.store).bind_input(project_id, args)
         if not request_key or len(request_key) > 160:
             raise ValueError("需要稳定且不超过160字符的制作请求标识")
@@ -121,6 +122,7 @@ class Jobs:
                 if job["status"] == "pending" and self.gate:
                     self.gate(job["project_id"], job["args"]["stage"], purpose, job["args"]["basis_id"])
                 if purpose == "compose":
+                    Preproduction(self.store).validate_animatic(job["project_id"], purpose, job["args"])
                     self.store.update_record(job_id, status="rendering", started=job["started"] or now())
                     result = await self.media.render(job)
                     artifact = self.store.create_artifact(job["project_id"], job["args"]["kind"], job["title"],

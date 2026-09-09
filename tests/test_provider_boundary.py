@@ -5,6 +5,22 @@ from movie_agent.config import Binding, Configuration
 from movie_agent.providers import Provider, ProviderError
 
 
+async def test_natural_language_voice_emotion_is_rejected_before_paid_request():
+    sent = []
+    async def remote(request):
+        sent.append(request)
+        return httpx.Response(200, json={"data": {"audio": "0001"}})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(remote)) as client:
+        provider = Provider(Binding("test", "minimax_audio", "https://example.test", "speech-2.8-hd", {}, "test"), client)
+        with pytest.raises(ProviderError, match="emotion"):
+            await provider.submit("voice", {"prompt": "陈哥，它在发光。", "emotion": "惊讶中带一丝欣喜"})
+        with pytest.raises(ProviderError, match="emotion"):
+            provider.validate("voice", {"emotion": "whisper"})
+        assert sent == []
+        await provider.submit("voice", {"prompt": "陈哥，它在发光。", "voice_id": "female-shaonv", "speed": 1})
+        assert len(sent) == 1
+
+
 async def test_lost_submit_response_is_unknown_and_not_retried():
     sent = []
 

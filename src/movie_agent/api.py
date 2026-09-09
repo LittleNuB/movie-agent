@@ -239,7 +239,7 @@ def create_app(data_root=None, *, vault=None, enable_runtime=True):
     @app.post("/api/projects/{pid}/annotations")
     async def annotation(pid: str, body: AnnotationInput):
         artifact = store.record(body.artifact_id, pid)
-        if artifact.get("kind") not in {"film", "trial", "video"}:
+        if artifact.get("kind") not in {"film", "trial", "video", "animatic"}:
             raise ValueError("只能对真实视频或影片版本添加时间点标注")
         duration = artifact.get("meta", {}).get("media", {}).get("duration", 0)
         if body.time > duration + 0.1:

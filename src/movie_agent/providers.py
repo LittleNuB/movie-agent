@@ -54,6 +54,17 @@ class Provider:
         unknown = set(parameters) - allowed.get(purpose, set())
         if unknown:
             raise ProviderError("此生成用途不支持参数：" + "、".join(sorted(unknown)) + "。视频时长使用 duration（秒）。")
+        if purpose == "voice" and self.binding.protocol == "minimax_audio":
+            speed = parameters.get("speed", 1)
+            if isinstance(speed, bool) or not isinstance(speed, (int, float)) or not 0.5 <= speed <= 2:
+                raise ProviderError("配音 speed 必须在0.5–2之间")
+            emotions = {"happy", "sad", "angry", "fearful", "disgusted", "surprised", "calm"}
+            if self.binding.model in {"speech-2.6-hd", "speech-2.6-turbo"}:
+                emotions |= {"fluent", "whisper"}
+            emotion = parameters.get("emotion")
+            if emotion is not None and (not isinstance(emotion, str) or emotion not in emotions):
+                raise ProviderError("配音 emotion 需要接口支持的枚举：" + ", ".join(sorted(emotions))
+                                    + "；复杂情绪用创作说明记录，或省略 emotion 让语音模型判断。请求尚未发送。")
         if purpose in {"video", "videoFallback"}:
             duration = parameters.get("duration", 10)
             is_max = self.binding.model == "MiniMax-H3-Max"

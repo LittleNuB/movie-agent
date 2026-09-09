@@ -1,6 +1,6 @@
 // Model-authored content is escaped before formatting; raw HTML is never rendered.
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export const kinds={proposal:'故事提案',script:'剧本',production_brief:'剧本制作说明',reference_manifest:'参考清单',shot_input:'镜头生成输入',visual_plan:'视觉方案',shot_plan:'镜头计划',edit_plan:'修改方案',continuity_check:'媒体观察',image:'图片',video:'镜头',audio:'声音',native_mixed:'原生混音',trial:'试拍',film:'影片',picture_master:'画面母版'};
+export const kinds={proposal:'故事提案',script:'剧本',production_brief:'剧本制作说明',reference_manifest:'参考清单',shot_input:'镜头生成输入',animatic:'分镜预演',visual_plan:'视觉方案',shot_plan:'镜头计划',edit_plan:'修改方案',continuity_check:'媒体观察',image:'图片',video:'镜头',audio:'声音',native_mixed:'原生混音',trial:'试拍',film:'影片',picture_master:'画面母版'};
 export const roles={director:'主导演',visual:'视觉制作',post:'后期',check:'连续性检查',visual_evidence:'画面观察'};
 export const statuses={idle:'等待你的想法',running:'处理中',waiting_review:'等待审核',stopped:'制作已暂停',pending:'已接收 · 等待处理',processing:'已接收 · 处理中',done:'已处理',preparing:'准备调用',submitting:'提交中',queued:'云端排队',downloading:'保存素材',rendering:'本地合成',succeeded:'已完成',completed:'已完成',ended:'本轮已结束',failed:'受阻',unknown:'提交结果待核对',cancelled_local:'本地已停止',interrupted:'已中断',download_failed:'下载受阻',query_failed:'查询受阻'};
 export const modeNames={co:'共创',auto:'托管',audio:'共创 · 声音托管'};

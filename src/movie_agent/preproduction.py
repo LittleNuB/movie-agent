@@ -4,6 +4,7 @@ Original application code informed by the research recorded in docs/research/.
 Structural checks are not story scores, visual judgments, or creative approval.
 """
 
+import math
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -93,6 +94,20 @@ class ShotSpec(Record):
     no_reference_reason: str = ""
 
 
+class AnimaticBoard(Record):
+    artifact_id: Identifier
+    event_ids: list[Identifier] = Field(min_length=1)
+    duration: float = Field(ge=1 / 24, allow_inf_nan=False)
+
+
+class AnimaticTrack(Record):
+    artifact_id: Identifier
+    start: float = Field(default=0, ge=0, allow_inf_nan=False)
+    source_start: float = Field(default=0, ge=0, allow_inf_nan=False)
+    duration: float | None = Field(default=None, ge=0.04, allow_inf_nan=False)
+    gain: float = Field(default=1, gt=0, allow_inf_nan=False)
+
+
 def unique(values, label):
     if len(values) != len(set(values)):
         raise ValueError(f"{label}不能重复")
@@ -133,6 +148,44 @@ class Preproduction:
             raise Conflict("制作依据已过时或剧本未采用，请保留旧版本并基于当前决定核对")
         if item.get("meta", {}).get("candidate_only"):
             raise Conflict("迟到制作说明仅为候选，需要按当前依据重新发布")
+
+    def animatic_plan(self, project_id, brief_id, boards, tracks):
+        brief = self.artifact(project_id, brief_id, "production_brief")
+        self.current(project_id, brief)
+        if not boards or not tracks:
+            raise ValueError("有声分镜预演需要实际图片和至少一份临时声音；只有静帧不能称为有声预演")
+        boards = [AnimaticBoard.model_validate(b) for b in boards]
+        tracks = [AnimaticTrack.model_validate(t) for t in tracks]
+        known_events = [e["id"] for e in brief["meta"]["brief"]["events"]]
+        for board in boards:
+            subset(board.event_ids, known_events, "预演事件")
+            if self.media(project_id, board.artifact_id)["kind"] != "image":
+                raise ValueError("分镜预演画面需要静态图片，真实视频请用试拍合成")
+        for track in tracks:
+            if self.media(project_id, track.artifact_id)["kind"] != "audio":
+                raise ValueError("预演临时声音需要实际音频产物")
+        # Quantize cumulative boundaries, not each segment independently: many
+        # fractional boards must not accumulate a full-frame rounding error each.
+        clips, requested_end, prior_frames = [], 0, 0
+        for board in boards:
+            requested_end += board.duration
+            end_frames = max(prior_frames + 1, math.floor(requested_end * 24 + 0.5))
+            clips.append({"artifact_id": board.artifact_id, "duration": (end_frames - prior_frames) / 24, "audio_gain": 0})
+            prior_frames = end_frames
+        if any(t.start >= prior_frames / 24 for t in tracks):
+            raise ValueError("临时声音开始位置超出预演时长")
+        return {"kind": "animatic", "stage": "animatic", "basis_id": brief_id, "brief_id": brief_id,
+                "boards": [b.model_dump() for b in boards],
+                "clips": clips,
+                "tracks": [t.model_dump(exclude_none=True) for t in tracks]}
+
+    def validate_animatic(self, project_id, purpose, args):
+        if args.get("stage") == "animatic" or args.get("kind") == "animatic":
+            if purpose != "compose" or args.get("kind") != "animatic" or args.get("stage") != "animatic":
+                raise ValueError("预演不能伪装为真实试拍、影片或外部生成任务")
+            expected = self.animatic_plan(project_id, args.get("brief_id"), args.get("boards"), args.get("tracks"))
+            if args != expected:
+                raise ValueError("预演合成输入与实际分镜、声音或制作依据不一致")
 
     def save(self, project_id, kind, title, text, data, script_id, author, parent_id=None, basis=None):
         if not title.strip():
@@ -257,7 +310,11 @@ class Preproduction:
         if spec.path == "frames" and len(roles) != len(set(roles)):
             raise ValueError("首帧与尾帧各只能有一份")
         if spec.path == "multimodal" and (not roles or set(roles) & {"first_frame", "last_frame"}):
-            raise ValueError("多模态路径需要参考素材，不能混入首尾帧角色")
+            raise ValueError(
+                "多模态路径需要参考素材，不能混入首尾帧角色。"
+                "若要首帧／尾帧约束，请使用 path=frames 并保留 first_frame／last_frame 角色；"
+                "reference_image 仅为普通参考，不能为了通过校验而改变已承诺的生成路径。"
+            )
         if spec.entity_ids and not references and not spec.no_reference_reason.strip():
             raise ValueError("涉及已登记实体但未使用参考，请说明当前镜头的选择理由")
         return brief, references, details
@@ -285,6 +342,7 @@ class Preproduction:
         if spec.path == "multimodal":
             warnings.append("多模态提示中的起止构图是目标描述，不等于首尾帧硬约束。")
         prompt = "\n".join(prompt_lines)
+        path_label = {"text": "纯文本", "frames": "首尾帧", "multimodal": "多模态参考（不是首帧锁定）"}[spec.path]
         basis = {k: v for k, v in self.store.project(project_id)["adopted"].items() if k in {"script", "visual_plan"}}
         basis["script"] = brief.script_id
         data = {"spec": spec.model_dump(), "brief_id": spec.brief_id, "manifest_id": spec.manifest_id,
@@ -293,6 +351,8 @@ class Preproduction:
                 "warnings": warnings, "unit_id": spec.unit_id, "asset_ids": [r["artifact_id"] for r in references]}
         text = ("请求已编译，尚未提交生成；字段完整不代表声画通过。\n\n"
                 f"- 镜头：{spec.unit_id}\n- 相关事件：{'、'.join(spec.event_ids)}\n"
+                f"- 实际输入模式：{path_label}\n"
+                f"- 实际参考角色：{'、'.join(r['artifact_id'] + ' (' + r['role'] + ')' for r in references) or '无'}\n"
                 f"- 路径选择：{spec.path_reason}\n- 不用参考的理由：{spec.no_reference_reason or '已使用参考'}\n"
                 f"- 模型：{binding.model}\n- 时长：{parameters.get('duration', 10)}秒\n"
                 f"- 制作说明：{spec.brief_id}\n- 参考清单：{spec.manifest_id or '无'}\n\n"

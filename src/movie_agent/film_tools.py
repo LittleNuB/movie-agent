@@ -6,7 +6,14 @@ from typing import Literal
 from agentscope.message import TextBlock
 from agentscope.tool import FunctionTool, ToolChunk
 
-from .preproduction import Preproduction, ProductionBrief, ReferenceManifest, ShotSpec
+from .preproduction import (
+    AnimaticBoard,
+    AnimaticTrack,
+    Preproduction,
+    ProductionBrief,
+    ReferenceManifest,
+    ShotSpec,
+)
 from .providers import Provider, ProviderError
 from .store import Conflict
 
@@ -31,6 +38,11 @@ class FilmTools:
         if p.get("production_paused"):
             raise Conflict("影片已中止，用户明确继续前不能新增制作")
         basis = self.store.record(basis_id, project_id, "artifacts") if basis_id else None
+        if stage == "animatic":
+            if purpose != "compose" or not basis or basis["kind"] != "production_brief":
+                raise ValueError("分镜预演阶段只允许基于当前制作说明进行本地预演合成")
+            self.preproduction.current(project_id, basis)
+            return
         if stage not in {"visual", "trial", "production", "edit"}:
             raise ValueError("未知制作阶段")
         if stage == "visual" and purpose != "image":
@@ -250,6 +262,8 @@ class FilmTools:
             request_key uniquely identifies this shot/asset attempt (e.g. shot-3-v1); reuse returns its task.
             unit_id is the stable shot/character/voice-line identity in the plan (e.g. SH3); keep it across attempts and Providers.
             parameters: duration, resolution, size; voice_id, speed, emotion for voice.
+            MiniMax voice emotion is an API enum (happy/sad/angry/fearful/disgusted/surprised/calm),
+            not a natural-language direction. Omit when automatic expression suffices; speed is 0.5–2.
             Current generation specification: H3 uses 768P; Ark uses 720p. Read current model assignments.
             expected_model must be the exact model ID assigned to purpose, so an intended fallback cannot silently use the primary.
             Never use seconds as a parameter key. Already submitted cloud tasks keep their original parameters.
@@ -319,6 +333,23 @@ class FilmTools:
                  "subtitles": subtitles or [], "picture_master_id": picture_master_id})
             return output(job)
 
+        async def compose_animatic(title: str, request_key: str, brief_id: str,
+                                   boards: list[AnimaticBoard], tracks: list[AnimaticTrack]):
+            """Make an audible static storyboard locally, without any generation API calls.
+            Uses a production brief bound to the adopted script, existing image boards with event IDs
+            in intended screen order and actual temporary audio tracks. Duration/start are output seconds.
+            Board durations must be at least 1/24 second. Output boundaries round to the nearest 24fps frame;
+            returned clips contain actual durations, boards retain requested durations. Track positions use output seconds.
+            Returns a background task. The result is visibly labeled animatic, never a trial or final film.
+            No extra approval gate is added; it cannot substitute for actual video/visual review.
+            Generate any missing media under existing stage permissions before calling this tool.
+            """
+            current_scope()
+            self.check_gate(project_id, "animatic", "compose", brief_id)
+            args = self.preproduction.animatic_plan(project_id, brief_id,
+                boards, tracks)
+            return output(await self.jobs.submit(project_id, "compose", title + " · 分镜预演", request_key, args))
+
         async def inspect_media(artifact_ids: list[str], question: str):
             """Inspect actual image/video frames using the assigned vision model and project context.
             Result names source IDs and frame times. This does not listen to audio or approve quality.
@@ -381,7 +412,7 @@ class FilmTools:
             return output(self.store.update_project(project_id, title=title.strip()))
 
         functions = [read_project, read_artifact, publish_document, generate_media, compose, export_film_version, inspect_media, extract_frame, recover_task, voice_catalog]
-        functions += [publish_production_brief, publish_reference_manifest, compile_shot_input, submit_shot_input]
+        functions += [publish_production_brief, publish_reference_manifest, compile_shot_input, submit_shot_input, compose_animatic]
         if role == "director":
             functions += [request_review, record_user_review, delegate, resume_production, rename_project]
         result = []

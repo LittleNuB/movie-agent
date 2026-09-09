@@ -11,7 +11,7 @@
 | [通用模型设置](../product/model-settings.md) | 已按反馈调整；8 组聚焦浏览器检查通过，随后 UI 暂定通过 | 用户明确个人模型组合不能作为完整产品预设 |
 | [真实电影能力建设](../plans/capability-mvp.md) | 进行中，见[本轮实施](../plans/runtime-implementation.md)；真实分项已开始，整片与完整矩阵待验收 | 用户明确要求实施完整计划，包含真实调用、两次完整制作及修改 |
 | [对话工作区体验完善](../plans/frontend-experience.md) | 已实现并接入原有真实服务；见[验收](../validation/frontend-experience-2026-09-08.md)，等待用户复评 | 2026-09-08 用户明确要求优先完善前端，参考 Codex／DSH |
-| [前期制作能力建设](../plans/preproduction-quality.md) | Q1—Q3首批工具与来源导航已实现，见[检查记录](../validation/preproduction-quality-2026-09-09.md)；真实行为、预演与收益待验证 | 2026-09-09 用户同意生成质量研究，要求先形成文档再推进 |
+| [前期制作能力建设](../plans/preproduction-quality.md) | Q1—Q4工具与来源导航已实现，两组真实文字、参考派生与有声预演已有产物；[真实验证](../validation/preproduction-live-2026-09-09.md)保留逻辑和质量缺口，Q5继续 | 2026-09-09 用户同意生成质量研究，要求先形成文档再推进 |
 
 ## 记录约定
 

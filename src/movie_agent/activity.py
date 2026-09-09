@@ -5,6 +5,7 @@ TOOL_LABELS = {
     "read_project": "读取项目状态", "read_artifact": "读取作品资料",
     "publish_document": "保存创作文稿", "generate_media": "提交媒体任务",
     "compose": "提交影片合成", "export_film_version": "提交版本导出",
+    "compose_animatic": "合成有声分镜预演",
     "inspect_media": "检查画面与连续性", "extract_frame": "提取参考画面",
     "recover_task": "核对已有媒体任务", "voice_catalog": "读取可用音色",
     "request_review": "准备作品审核", "record_user_review": "记录审核决定",
