@@ -41,7 +41,7 @@ export const activityRows=items=>items.map(a=>`<div class="activity-row ${esc(a.
 export function trace(snapshot,runId){
  const items=(snapshot.activities||[]).filter(a=>a.run_id===runId);if(!items.length)return '';
  const running=items.findLast(a=>['preparing','running'].includes(a.status));
- return `<details class="trace" data-detail="trace-${runId}"><summary><span class="activity-dot ${running?'pulse':''}"></span>${esc(running?.label||'查看执行过程')}<small>${items.length} 项活动</small></summary><div class="trace-body">${activityRows(items)}</div></details>`;
+ return `<details class="trace" data-detail="trace-${runId}"><summary><span class="activity-dot ${running?'pulse':''}"></span><span class="trace-label">${esc(running?.label||'查看执行过程')}</span><small>${items.length} 项活动</small></summary><div class="trace-body">${activityRows(items)}</div></details>`;
 }
 export const jobRows=s=>s.jobs.map(j=>`<div class="job-row"><div><strong>${esc(j.title)}</strong><small>${esc(statuses[j.status]||j.status)}${j.candidate_only?' · 仅保留为候选':''} · ${date(j.created)}</small>${j.error?`<p>${esc(j.error)}</p>`:''}</div><div>${(j.artifact_ids||[]).map(id=>button('asset','查看结果',`data-id="${id}"`)).join('')}${['unknown','download_failed','query_failed'].includes(j.status)?button('recover','核对结果',`data-id="${j.id}"`):''}</div></div>`).join('');
 export function workSummary(s){
