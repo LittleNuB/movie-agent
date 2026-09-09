@@ -1,0 +1,297 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Movie Agent 剧本、参考资产与生成质量的证据研究。"><title>把故事拍清楚 · Movie Agent 生成质量研究</title><style>
+:root{color-scheme:light;--paper:#fff;--back:#f3f4f5;--ink:#222b36;--muted:#65707e;--line:#dde2e8;--accent:#315d80}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:36px}body{margin:0;background:var(--back);color:var(--ink);font:16px/1.95 "Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+a{color:var(--accent);text-underline-offset:4px;overflow-wrap:anywhere}a:hover{color:#193f62}a:focus-visible,button:focus-visible{outline:3px solid #639ccb;outline-offset:4px}
+.sidebar{width:246px;position:fixed;inset:0 auto 0 0;padding:32px 24px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--back)}.brand{font-size:13px;font-weight:750;letter-spacing:.14em}.edition{font-size:12px;color:var(--muted);margin:8px 0 28px}.sidebar nav{display:flex;flex-direction:column;gap:6px}.sidebar nav a{font-size:13px;text-decoration:none;padding:8px;border-radius:5px;line-height:1.6;color:#4b5765;display:grid;grid-template-columns:24px 1fr;gap:5px}.sidebar nav a:hover{background:#e6edf2}.sidebar nav span{color:#91a0ad;font-size:11px;padding-top:2px}.sidebar footer{margin-top:auto;font-size:11px;color:var(--muted)}
+.page{margin:36px auto 64px max(282px,calc((100vw - 804px)/2));max-width:1000px;background:var(--paper);border:1px solid var(--line);padding:64px 68px;box-shadow:0 10px 40px #20304006}.kicker{font-size:12px;letter-spacing:.15em;color:var(--accent);font-weight:700}.meta{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 30px}.meta span{font-size:11px;padding:3px 9px;background:#f0f4f7;color:#486173;border-radius:4px}
+article h1{font-size:clamp(28px,2.5vw,38px);line-height:1.5;letter-spacing:-.035em;margin:12px 0 14px;max-width:740px}article>h1+p{color:var(--muted);font-size:13px;margin-bottom:28px}h2{font-size:24px;line-height:1.6;margin:60px 0 24px;padding-top:22px;border-top:1px solid var(--line)}h3{font-size:18px;line-height:1.7;margin:30px 0 14px}p{margin:16px 0}strong{font-weight:700;color:#182a3a}li{padding-left:4px;margin:10px 0}ul,ol{padding-left:24px}code{font:0.85em/1.5 Consolas,monospace;background:#f1f4f7;border-radius:3px;padding:2px 4px;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.85;margin:22px 0;table-layout:fixed}th,td{text-align:left;vertical-align:top;padding:13px 12px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:#eef3f7;color:#26465f;font-weight:650}td:first-child{font-weight:600;width:23%}tr:nth-child(even) td{background:#fafbfc}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#dce5ec;margin:0 0 25px;border:1px solid #dce5ec;border-radius:6px;overflow:hidden}.flow div{padding:14px 12px;background:#f6f9fb;line-height:1.5}.flow small{display:block;font-size:10px;letter-spacing:.1em;color:#7d92a4;margin-bottom:4px}.flow b{font-size:13px;font-weight:600}.closing{margin-top:45px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+@media(min-width:1600px){.page{margin-left:calc(246px + (100vw - 1246px)/2)}}
+@media(max-width:1100px){.sidebar{width:200px;padding:28px 16px}.page{margin:20px 20px 50px 220px;padding:40px 36px}.sidebar nav a{font-size:12px}}
+@media(max-width:760px){.sidebar{position:static;width:auto;border:0;border-bottom:1px solid var(--line);padding:18px 22px}.edition{margin:4px 0}.sidebar nav,.sidebar footer{display:none}.page{margin:0;border:0;padding:30px 22px;box-shadow:none}.flow{grid-template-columns:repeat(2,1fr)}h2{font-size:21px;margin-top:40px}table{font-size:12px}td,th{padding:10px 7px}}
+@media print{.sidebar{display:none}.page{margin:0;max-width:none;border:0;box-shadow:none;padding:0}body{background:white;font-size:11pt}h2{break-after:avoid}h3{break-after:avoid}tr{break-inside:avoid}a{color:inherit}.flow{break-inside:avoid}}
+</style></head><body><aside class="sidebar"><div class="brand">MOVIE AGENT</div><div class="edition">研究札记 / 2026.09.09</div><nav aria-label="报告目录"><a href="#section-1"><span>01</span>直接结论</a><a href="#section-2"><span>02</span>我们具体缺在哪里</a><a href="#section-3"><span>03</span>剧本：先完成故事设计，再转成拍摄依据</a><a href="#section-4"><span>04</span>资产：建立可用的标准，再按镜头挑选</a><a href="#section-5"><span>05</span>把工程落实到当前模型</a><a href="#section-6"><span>06</span>哪些项目值得具体复用</a><a href="#section-7"><span>07</span>建议的制作过程与最小实现</a><a href="#section-8"><span>08</span>怎样判断改进确实有效</a><a href="#section-9"><span>09</span>证据边界与阅读说明</a></nav><footer>官方文档 · 固定源码 · 原始研究<br>建议尚未实施，质量收益待验证</footer></aside><main class="page"><div class="kicker">CREATIVE PRODUCTION RESEARCH</div><div class="meta"><span>剧本逻辑</span><span>参考资产</span><span>可控生成</span></div><div class="flow" aria-label="研究覆盖的制作链"><div><small>01 / STORY</small><b>故事因果与动机</b></div><div><small>02 / ASSETS</small><b>人物与空间参考</b></div><div><small>03 / SHOTS</small><b>镜头输入与动作</b></div><div><small>04 / EVIDENCE</small><b>实际声画与人评</b></div></div><article><h1>把故事拍清楚：Movie Agent 生成质量研究</h1>
+<p>2026-09-09 · 面向产品所有者与后续开发 · 研究建议，尚未成为实施规格</p>
+<h2 id="section-1">1. 直接结论</h2>
+<p>应优先补齐电影前期设计与参考资产工程。用户提出的两个问题有明确依据：剧本缺少人物动机、事件因果和可见动作，会把未完成的创作任务转移给视频模型；参考资产缺少可靠的身份、空间和状态约束，会使不同镜头各自重新设计人物与场景。上一轮建议偏重生成后的检查，这轮研究支持把更多投入前移。</p>
+<p>已经有可复用的方法和实现：<strong>分层故事计划、人物状态记录、主形象派生参考、场景空间设计、镜头首尾状态、参考选择与版本绑定、带声音的分镜预演</strong>。这些共同构成一套更完整的制作依据。不过，公开经验的成熟度不相同：传统制作方法比较成熟，闭源 API 的适用方式取决于版本，自动拍好完整电影仍没有可直接继承的成功保证。</p>
+<p><strong>一个重要修正：资产库可以保存人物多视图，但不能把三视图作为所有视频调用的默认输入。</strong> Seedance 2.0 系列当前官方指南明确不建议人物多视图输入，建议面部特写与全身形象分开；ViMax 的多视图用于后续选图，其选择器也按目标视角选用。两者在用途上可以协调。<a href="https://www.volcengine.com/docs/82379/2222480">Seedance 提示词指南</a>、<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/agents/reference_image_selector.py">ViMax 参考选择</a></p>
+<p>本轮完成公开文献、官方接口及固定源码研究，并只读检查本地项目。未生成新图片、视频或声音，未修改产品运行代码、用户剧本、模型设置与采用关系。以下方法需要后续真实模型和人评验证。</p>
+<h2 id="section-2">2. 我们具体缺在哪里</h2>
+<p>检查基线为 Movie Agent <code>587d50b</code>。目前已具备文稿版本、真实参考参数、异步生成与媒体观察，缺口集中在创作依据是否完整，以及这些依据是否真的进入每次调用。</p>
+<table>
+<thead>
+<tr>
+<th>观察</th>
+<th>已有证据</th>
+<th>对质量的含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>剧本设计主要依靠提示词</td>
+<td><code>STORY_CRAFT</code> 要求动机、因果与可拍摄动作；文稿结构化数据仍主要为自由字典</td>
+<td>原则已经写了，但缺少能追踪缺失前提、状态变化与镜头兑现情况的稳定产物</td>
+</tr>
+<tr>
+<td>参考能力存在，实际使用少</td>
+<td>《回声频率》共6张图：2张来自图像生成任务，4张来自视频抽帧；14条视频任务里12条没有登记参考，另2条使用单首帧</td>
+<td>“生成过图片”不能证明图片约束了影片；需检查实际引用链</td>
+</tr>
+<tr>
+<td>参考用途与质量缺乏完整承接</td>
+<td>工具能校验资产存在、类型与版本；没有完整的人物主形象、服装状态、视角与场景覆盖管理</td>
+<td>需要把可用文件进一步组织为制作资产</td>
+</tr>
+<tr>
+<td>采用与内容检查未充分关联</td>
+<td>托管可自动记录采用；当前视频观察只取三帧且不听音频</td>
+<td>有真实文件仍不足以说明关键动作与声画成立</td>
+</tr>
+</tbody>
+</table>
+<p>上述14条是任务记录，包含失败与重试，不是14个独立镜头，也不是成功率；本轮没有重新观看全部产物，不能据此断言所有画面均不一致。用户关于故事无聊、看不懂的意见仍为有效人评。<a href="https://github.com/LittleNuB/movie-agent/blob/587d50bc11add7bb87bb3c4782a1db23ed009fdc/src/movie_agent/prompts.py">当前创作提示</a>、<a href="https://github.com/LittleNuB/movie-agent/blob/587d50bc11add7bb87bb3c4782a1db23ed009fdc/src/movie_agent/film_tools.py">制作与审核工具</a>、<a href="https://github.com/LittleNuB/movie-agent/blob/587d50bc11add7bb87bb3c4782a1db23ed009fdc/src/movie_agent/media.py">媒体观察</a></p>
+<h2 id="section-3">3. 剧本：先完成故事设计，再转成拍摄依据</h2>
+<h3>已有方法提供什么</h3>
+<p>Re³ 将写作计划、相关人物事实、早期摘要与近期原文共同用于续写，并用紧凑人物属性记录处理事实冲突。其研究对象是英语长故事，实验收益来自多种机制，不能归功于一句“保持逻辑一致”的提示，也不能直接换算为电影达标率。<a href="https://aclanthology.org/2022.emnlp-main.296/">Re³，EMNLP 2022</a></p>
+<p>DOC 使用详细层级大纲约束事件、场景和人物。后续官方 v2 的 <code>OutlineNode</code> 明确保存节点身份、场景、参与人物、父子关系，并能构造相邻和上层上下文。可复用这种表示与上下文组织；原版包含 token logits 控制，无法直接通过 GLM 聊天 API 照搬，v2 也不等同于复现原论文全部实验效果。<a href="https://aclanthology.org/2023.acl-long.190/">DOC，ACL 2023</a>、<a href="https://github.com/facebookresearch/doc-storygen-v2/blob/main/storygen/plan/outline.py">官方 v2 数据结构</a></p>
+<p>Dramatron 从一句话故事逐层形成角色、场次、地点和对白，并允许人在各层修改。它适合借鉴剧本分层，官方明确没有将其设计或评测为自主托管系统；专业人士研究涉及15人，上演剧本经过大量人工改写。<a href="https://github.com/google-deepmind/dramatron">Dramatron 官方说明</a></p>
+<p>叙事规划研究 IPOCL 还区分两种成立条件：世界中的前提允许一个行动发生，以及人物有理由选择这个行动。其符号规划实验场景受限，可借鉴分析问题的角度，无须给短片引入完整规划器。<a href="https://arxiv.org/pdf/1401.3841">Riedl 与 Young，Narrative Planning，JAIR 2010</a></p>
+<h3>对 Movie Agent 的建议</h3>
+<p>保留用户能直接阅读和手改的完整剧本；在背后维护一份精简的制作说明。模型可以自主设计内容，程序保存来源、引用和当前状态。以下是建议字段，不冻结数据库 Schema：</p>
+<table>
+<thead>
+<tr>
+<th>设计对象</th>
+<th>至少回答的问题</th>
+<th>常见缺口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>世界规则</td>
+<td>能做什么？条件与代价是什么？</td>
+<td>结尾临时出现一种能解决问题的新能力</td>
+</tr>
+<tr>
+<td>人物动机</td>
+<td>他想要什么？知道什么之后改变选择？</td>
+<td>只有“他感动了”，没有可理解的触发</td>
+</tr>
+<tr>
+<td>关键事件</td>
+<td>前提、行动、结果、后续影响分别是什么？</td>
+<td>事件顺序相邻，但没有因果或有意关联</td>
+</tr>
+<tr>
+<td>信息安排</td>
+<td>人物知道什么？观众现在知道什么？何时揭示？</td>
+<td>决策依据只存在于幕后设定里</td>
+</tr>
+<tr>
+<td>状态变化</td>
+<td>人物、物件、空间从什么状态变成什么状态？</td>
+<td>道具易主、受损、移动没有过程</td>
+</tr>
+<tr>
+<td>镜头兑现</td>
+<td>哪个动作、画面或声音承载这一变化？</td>
+<td>镜头都很有气氛，关键剧情没有被表现</td>
+</tr>
+</tbody>
+</table>
+<p>一次专业逻辑审查可围绕上述问题，指出具体位置与缺失依据。它负责找矛盾和不可拍摄的表达，不给故事趣味打分，不自动无限改稿。保留有意留白、误解、不可靠叙述与开放结尾；“闭环”意味着关键选择与后果有设计，不能变成每件事都向观众解释一遍。</p>
+<p><strong>示例，仅用于说明方法，未修改现有影片：</strong>“工程师决定切断电源救人”仍缺必要信息。可以设计为：门被失控电机夹住；备用电池仅能维持紧急照明；他看到同伴手套被卡住，选择拉下总闸；电机停转但舱室变暗；同伴获救，导航因此失效。是否采用这段故事仍由创作判断，但前因、代价、行动与结果已有可拍内容。随后应明确拉闸动作、门的运动、电机停声和照明变化由哪些镜头表现，而非再加一串“震撼、史诗、电影感”。</p>
+<h2 id="section-4">4. 资产：建立可用的标准，再按镜头挑选</h2>
+<h3>多视图应怎样做</h3>
+<p>ViMax 固定版本的 <code>CharacterPortraitsGenerator</code> 确实先生成正面全身图，再把该图作为真实图像参考生成侧面和背面，保存独立结果。这提供了可复用的派生流程，避免三次独立文生图各自重新设计人物。<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/agents/character_portraits_generator.py">人物多视图源码</a></p>
+<p>Runway 的官方实践提供另一种基础：用光线均匀、表情中性的主体图开始，分别迭代人物与环境，再组合为镜头画面；选定服装变化后，将那个具体版本保存为后续参考。它展示了单参考与多参考用法，但没有证明固定三视图或固定数量在所有模型上最优。<a href="https://help.runwayml.com/hc/en-us/articles/40042718905875-Creating-with-Gen-4-Image-References">Runway 图像参考指南</a></p>
+<p><strong>建议资产包如下，生成数量随剧本变化。</strong> 主角跨镜出现时，应有稳定身份来源；只有需要侧背细节、转身或相应机位时，才补充对应视角。三视拼版可以给人审阅，模型输入另行选择。</p>
+<table>
+<thead>
+<tr>
+<th>资产</th>
+<th>要解决的具体问题</th>
+<th>建议制作方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>人物面部主参考</td>
+<td>跨镜辨认同一人</td>
+<td>清晰面部、简单背景、适合辨识的光线；采用版本保持稳定</td>
+</tr>
+<tr>
+<td>全身及服装参考</td>
+<td>身材比例、服装、鞋与装备</td>
+<td>引用主形象派生；服装与身份分别标记</td>
+</tr>
+<tr>
+<td>侧面、背面、局部</td>
+<td>侧脸、背包装备、头盔接缝等确有戏份的细节</td>
+<td>从同一主形象派生，检查通过后作为补充视角</td>
+</tr>
+<tr>
+<td>场景整体与关键机位</td>
+<td>门窗、走道、操作台的相对位置</td>
+<td>先做纯场景整体设计；正反打、转角与局部按实际拍摄补齐</td>
+</tr>
+<tr>
+<td>关键道具及状态</td>
+<td>道具大小、归属、完好／破损、开启／关闭</td>
+<td>单独设计可辨识外观，变化版本关联发生的事件</td>
+</tr>
+<tr>
+<td>镜头起始构图</td>
+<td>同框关系、站位、视线、画面重点</td>
+<td>组合人物、场景与道具；先解决空间表达，再生成运动</td>
+</tr>
+<tr>
+<td>结束构图或动作参考</td>
+<td>必须到达的结果、难描述的动作／运镜</td>
+<td>仅在镜头确有需要且 Provider 支持时制作或选择</td>
+</tr>
+</tbody>
+</table>
+<p>资产除了文件和名称，还应记录：对应人物／场景、用途、故事时间、外观状态、视角、父参考、采用版本、检查依据，以及后续哪些镜头使用了它。受伤、湿衣、道具转移属于合理变化，不应被“一致性”纠正回初始状态。</p>
+<h3>标准参考与新生成结果的关系</h3>
+<p>GroundShot 把人物、道具、场景分别管理，保护标准参考，仅将可靠的新视角纳入补充；还允许先制作更适合建立参考的镜头，最后恢复故事顺序。其54份剧本、309镜头的实验采用4秒、720p无声片段；同后端对照与消融支持实体参考和生产次序的作用。它是未独立复现的预印本，未在本轮找到可确认的公开代码入口，不证明 H3／Fast 上的收益。<a href="https://arxiv.org/html/2606.20799v3">GroundShot v3，2026-07-20</a></p>
+<p>对应的产品建议是：开场远景或背影不适合做人脸标准时，可以先生成专门身份图；成功生成的文件先作为候选，只有身份、清晰度和状态合适的部分才能升级为参考。上一镜尾帧可以帮助相邻动作衔接，但长期身份不能只依赖不断变化的最近一帧。</p>
+<p>场景也需要实际空间覆盖。一张漂亮的驾驶舱正面图不能定义驾驶舱反面；补充机位应继承门、窗、控制台等位置关系。复杂科幻空间后续可评估简易平面图、布局草图或3D预演，但本轮证据不足以要求所有影片都采用3D建模。</p>
+<h2 id="section-5">5. 把工程落实到当前模型</h2>
+<h3>需要区分三种输入路径</h3>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>适用情形</th>
+<th>具体交给模型什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文生视频</td>
+<td>无持续身份要求的环境、抽象或探索镜头</td>
+<td>简洁的镜头事件、视觉方向和声音意图；仍检查实际输出</td>
+</tr>
+<tr>
+<td>镜头图／首尾帧生视频</td>
+<td>人物站位、道具位置、构图或起止状态需要精确表达</td>
+<td>已完成构图的单帧，必要时加尾帧；文字集中描述动作、变化与声音</td>
+</tr>
+<tr>
+<td>多模态参考生视频</td>
+<td>多主体身份、场景、动作或声音需要分别参考</td>
+<td>少量各有职责的图像／视频／音频，并明确每份素材控制什么</td>
+</tr>
+</tbody>
+</table>
+<p>输入图像承担构图与外观、视频提示补充运动，是 Runway Gen-4 的官方用法；首尾帧制作也有火山的图像辅助视频实践。它们支持这类分工，具体提示词规则仍不能跨模型照抄。<a href="https://help.runwayml.com/hc/en-us/articles/39789879462419-Gen-4-Video-Prompting-Guide">Runway 视频指南</a>、<a href="https://www.volcengine.com/docs/82379/1951250">Seedream 4.0 辅助视频案例，历史版本</a></p>
+<h3>已核对的接口边界</h3>
+<p><strong>MiniMax H3。</strong> V2 支持文生、首帧／尾帧／首尾帧与多模态参考；首尾帧角色不能与参考图、参考视频、参考音频混用，多模态参考图片上限9张。我们继续使用768P。若镜头需要人物与场景分别约束，可先合成正确的镜头图走首帧，也可走多模态参考，不能拼出接口不支持的组合。H3 Max 的参考限制不同，不混作 H3 能力。<a href="https://platform.minimaxi.com/docs/api-reference/video-generation-v2-create">H3 创建接口</a></p>
+<p><strong>Seedance 2.0 Fast。</strong> 当前 API 的2.0系列支持首尾帧及全模态参考，Fast支持720p；不同输入模式互斥。参考模式可以在文本中描述期望的首尾构图，但这不等价于严格首尾帧约束。<a href="https://www.volcengine.com/docs/82379/1520757">创建任务 API</a></p>
+<p>官方提示词指南指出人物多视图可能被识别为多个主体，建议独立面部特写加全身图，并强调空间关系用图表达、参考素材避免堆满。因此，电影资产库可以留侧背视角；Fast 的默认调用应先采用其推荐组合，额外视角只在对应任务中验证。<a href="https://www.volcengine.com/docs/82379/2222480">Seedance 2.0 系列指南，2026-09-08更新</a></p>
+<p><strong>Seedream 5.0 Pro。</strong> 当前专属教程确认 <code>doubao-seedream-5-0-pro-260628</code> 支持单图／多图参考生图、局部交互编辑与图层拆分，但普通文生组图和图生组图暂不支持。多视图应逐张派生，或在有实测依据后另选支持组图的模型；一张底图加若干透明图层不能当作多个完整镜头。既有适配器能传参考图，尚未把专属编辑和资产工作流完整产品化。<a href="https://www.volcengine.com/docs/82379/2582774">Pro 专属教程，2026-09-08更新</a></p>
+<p><strong>会影响真实引用链的条件。</strong> 方舟对含人脸素材有专门输入机制：部分同账号、同平台、近30天内的原始模型产物受信，包括规定范围内的 Seedream 5.0 lite／pro 文生图。二次编辑、压缩转发可能使这一资格失效。工程上需要保留原始产物来源，不能默认“本地裁切的脸图”“H3 视频抽帧”能直接通过 Fast 的同一路径。受信范围之外应使用平台实际提供的适用机制；不得把换模型或改变文件包装用于绕过审核。<a href="https://www.volcengine.com/docs/82379/2608626">肖像素材官方说明</a></p>
+<p><strong>可试验的新接口。</strong> H3-Context-IR 接受多模态上下文并返回增强的视频提示词，不直接生成影片。可作为候选输入编译步骤，对比它是否补足空间、动作和声画细节；输出必须保留原意，不能自行增加角色、镜头或配乐后直接执行。本轮未接入或测试。官方列价按输入／输出 token 分别计费，不是免费步骤。<a href="https://platform.minimaxi.com/docs/api-reference/video-generation-v2-h3-context-ir">Context-IR 接口</a>、<a href="https://platform.minimaxi.com/docs/guides/pricing-paygo">官方计费</a></p>
+<h2 id="section-6">6. 哪些项目值得具体复用</h2>
+<table>
+<thead>
+<tr>
+<th>来源</th>
+<th>值得提取的部分</th>
+<th>不应原样继承的部分</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ViMax，固定版05a4894</td>
+<td>人物主图派生、静态与动态外观、帧描述与运动分开、目标视角选参考、机位依赖</td>
+<td>固定数量、整个旧运行时；生成过渡视频取得新机位会增加成本，不应每镜头必经</td>
+</tr>
+<tr>
+<td>AdCraft，固定版08cf7e6</td>
+<td>主资产到衍生资产的父子关系，版本与用途绑定，纯场景设计，前段结束与后段开始状态</td>
+<td>广告产品约束、固定九宫格、参考人物强制半写实二维插画，以及其完整画布产品</td>
+</tr>
+<tr>
+<td>OpenMontage，固定版cd9f3c1</td>
+<td>镜头意图与信息作用、所需资产、镜头规格到提示词的编译</td>
+<td>以现有素材剪辑与补镜为主的整体流程；填写字段不能证明镜头有叙事价值</td>
+</tr>
+<tr>
+<td>DOC v2／Re³</td>
+<td>层级事件、人物状态、局部上下文构造</td>
+<td>旧模型调用、logits控制和完整自动评分重排流程</td>
+</tr>
+<tr>
+<td>GroundShot</td>
+<td>可靠标准参考、目标镜头选图、参考质量检查、非叙事顺序制作</td>
+<td>未确认可直接下载的工程包、作者的阈值和达标率</td>
+</tr>
+</tbody>
+</table>
+<p>源码入口：<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/agents/storyboard_artist.py">ViMax 分镜</a>、<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/agents/camera_image_generator.py">机位生成</a>、<a href="https://github.com/GML-MMGroup/AdCraft/blob/08cf7e6c90154e5675747214b2f4bf99459dac33/apps/api/app/services/agent_canvas_role_reference_policy.py">AdCraft 引用绑定策略</a>、<a href="https://github.com/GML-MMGroup/AdCraft/blob/08cf7e6c90154e5675747214b2f4bf99459dac33/apps/api/app/services/agent_canvas_character_reference_prompt_policy.py">人物参考策略</a>、<a href="https://github.com/GML-MMGroup/AdCraft/blob/08cf7e6c90154e5675747214b2f4bf99459dac33/apps/api/agent/skills/video_agent_scene_design/SKILL.md">场景设计</a>、<a href="https://github.com/GML-MMGroup/AdCraft/blob/08cf7e6c90154e5675747214b2f4bf99459dac33/apps/api/agent/skills/video_agent_storyboard_design/SKILL.md">分镜状态衔接</a>、<a href="https://github.com/calesthio/OpenMontage/blob/cd9f3c1f03368be87b140af494914b8ee4e3c7a4/schemas/artifacts/scene_plan.schema.json">OpenMontage 镜头规格</a>、<a href="https://github.com/calesthio/OpenMontage/blob/cd9f3c1f03368be87b140af494914b8ee4e3c7a4/lib/shot_prompt_builder.py">提示词编译</a>。</p>
+<p><strong>实现存在不等于默认管线已使用。</strong> ViMax 有图像选择与剧本增强类，但此次核查默认 Idea2Video／Script2Video 调用链未发现调用相关选择／增强模块；不能把 README 中自动质控描述写成已运行的整套 best-of-k 闭环。候选择优也不等于达标，所有候选都不好时仍应报告不足。<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/pipelines/script2video_pipeline.py">ViMax 管线</a>、<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/agents/best_image_selector.py">图像选择器</a></p>
+<p><strong>复制代码的边界。</strong> 已核对固定版本：ViMax 为 MIT；AdCraft 是个人及非商业许可，不能视作默认可商用的宽松许可；OpenMontage 为 AGPL-3.0。后续提取代码、文档或 Skill 时需逐项遵守具体条款与来源声明，本轮只分析方法，没有导入其实现。<a href="https://github.com/HKUDS/ViMax/blob/05a48943878312d88fe5a016c12a9654940ecc43/LICENSE">ViMax 许可</a>、<a href="https://github.com/GML-MMGroup/AdCraft/blob/08cf7e6c90154e5675747214b2f4bf99459dac33/LICENSE">AdCraft 许可</a>、<a href="https://github.com/calesthio/OpenMontage/blob/cd9f3c1f03368be87b140af494914b8ee4e3c7a4/LICENSE">OpenMontage 许可</a></p>
+<p>StoryDiffusion、StoryMem、ShotAdapter 可作为研究对照，但其效果包含注意力、潜空间、LoRA或微调等模型内部机制。不能将其名字包装为普通 H3／Seedance API 上可直接安装的增强插件。<a href="https://arxiv.org/abs/2405.01434">StoryDiffusion</a>、<a href="https://arxiv.org/html/2512.19539v1">StoryMem</a>、<a href="https://shotadapter.github.io/">ShotAdapter，CVPR 2025</a></p>
+<h2 id="section-7">7. 建议的制作过程与最小实现</h2>
+<p>建议仍由主导演统筹、专业职责按需参与，沿用 AgentScope 和现有资产库。新增的是可执行的制作方法与产物，不先固定更多 Agent，也不增加用户必须填写的专业表单。</p>
+<ol>
+<li><strong>故事设计。</strong> 形成完整故事与关键事件依据，做一次有位置、有理由的逻辑审查；按现有共创／托管授权决定采用。</li>
+<li><strong>制作拆解。</strong> 从采用剧本得到人物、地点、道具、状态变化，以及实际拍摄需要的素材清单。</li>
+<li><strong>建立视觉标准。</strong> 生成并检查主角、服装、场景、关键道具；按镜头需求补视角。固定的是采用版本，后续创作变化仍可以形成新版本。</li>
+<li><strong>分镜预演。</strong> 用粗分镜、临时对白与声音安排整片时长，检查信息顺序和动作时间。可在现有右侧作品页播放，无须新增视频工作台。</li>
+<li><strong>按依赖试拍。</strong> 选择真实难点：人物同框、道具交互、复杂空间或关键动作。先验证后续会依赖的视觉标准，再安排其余生成。</li>
+<li><strong>镜头输入编译。</strong> 根据当前状态、目标构图、所需参考和实际 Provider 形成输入。每份参考均有明确作用，保留调用时采用的版本。</li>
+<li><strong>结果检查与局部修改。</strong> 对实际声画检查可观察问题，保留合格素材，定位缺失动作和状态错误，选择重做图片、补拍或后期调整；最终故事感受由人判断。</li>
+</ol>
+<p>分镜预演有传统动画制作依据。Pixar 与 Khan Academy 课程将分镜、构图、运动、反馈与 storyreel 作为创作内容；它适合把“看不懂”的问题提前暴露。预演只证明计划表达和节奏可读，不证明视频模型会完成同样的运动。<a href="https://www.khanacademy.org/computing/pixar/storytelling">Pixar × Khan Academy 课程</a></p>
+<p>连续性拆解也有现成职业方法：场记在拍摄前按故事日、人物、服装、道具和动作拆解，拍摄中记录实际连续性。可借鉴职责，但不能因此声称视觉模型已经胜任全部场记判断。<a href="https://www.screenskills.com/job-profiles/roles/script-supervisor-film-and-tv-drama/">ScreenSkills 场记职责</a></p>
+<p>**建议优先实现三个模块：**剧本制作说明、参考资产与依赖管理、镜头输入编译。先把它们接到现有发布文稿、图像生成、视频生成和版本工具；再补分镜预演与重点检查。领域方法可以按需以 Skill 形式加载，但 Skill 文本、资产文件、执行记录三者都要有，不能只新增几份提示词。</p>
+<p>在资产库中建议显示“对应人物／场景”“当前用途”“派生来源”“哪些镜头使用了它”，让用户可以审阅。生成中间资产由 Agent 完成；是否展开查看由用户选择。共创保留既有关键审核，托管不为每一张图重新索取授权。</p>
+<h2 id="section-8">8. 怎样判断改进确实有效</h2>
+<p>本报告建议先分别测剧本设计与参考工程，避免更换故事、模型和参考方法后无法解释收益。以下均为待执行设计，未消耗之前的媒体额度。</p>
+<table>
+<thead>
+<tr>
+<th>对照</th>
+<th>保持什么不变</th>
+<th>看什么结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前写法 vs 分层事件＋制作说明</td>
+<td>同一创意、推理模型与创作要求</td>
+<td>缺失前提、无动机转变、状态冲突；盲读者能否复述关键因果</td>
+</tr>
+<tr>
+<td>文生 vs 统一主参考</td>
+<td>同一镜头内容、视频模型、规格与时长</td>
+<td>身份、道具和场景是否更稳定；先形成基础参考收益证据</td>
+</tr>
+<tr>
+<td>主参考 vs 按视角／状态选图</td>
+<td>同一剧本、模型和目标镜头</td>
+<td>同场景反打、转身、道具易主、衣着变化能否同时成立</td>
+</tr>
+<tr>
+<td>首帧路线 vs 多模态参考路线</td>
+<td>同一目标镜头与视觉标准</td>
+<td>构图控制、关键动作、多人关系、生成耗时与可用素材量</td>
+</tr>
+<tr>
+<td>原始提示 vs H3-Context-IR</td>
+<td>同一素材、镜头意图、生成配置</td>
+<td>增强提示是否忠实；是否增加未经需要的镜头、配乐或情节；最终质量有无收益</td>
+</tr>
+</tbody>
+</table>
+<p>对照不要求每个题材都走所有组合。先用少量重复样本验证机制，找到有效方法后再扩大；跨模型分别报告，不混成一个成功率。延续已确认的六类开发输入与两个保留输入：身份跨镜、同场景正反打、多人关系、道具状态变化、跨场景回访、关键情绪与动作表达都应覆盖，最后回到90–120秒完整影片。</p>
+<p>人评分两次：先读剧本，判断动机、逻辑与吸引力；再让未读剧本的人看影片，复述发生了什么。剧本能读懂而成片不能，优先追查镜头兑现与剪辑信息；剧本本身就不成立，先回到故事设计。用户的趣味判断继续保留，不由自动检查替代。</p>
+<p>记录采用前后的资产、新生成与复用量、返工原因、首次可用镜头比例、最终影片接受情况、产品外介入次数、时间和费用。所有失败与重试进入成本分母。参考设计新增成本应与减少的视频返工一起核算，不能仅比较单次视频单价；约30分钟与费用仍是目标，不新增硬停止阈值。</p>
+<h2 id="section-9">9. 证据边界与阅读说明</h2>
+<p>本轮证据分为：当前源码与本地记录、厂商接口与操作指南、传统制作方法、论文限定实验。官方案例是用法与展示，不等于稳定成功率；论文消融比营销描述更有解释力，但仍不能代替我们当前组合的实测。</p>
+<p>报告没有找到“固定三视图适用于所有视频模型”“一次生成全片已经普遍成熟”“上述方法能保证参考电影水准”的可靠依据。没有完整观看外部课程视频，也没有把搜索索引中未返回的内容写成已读全文。火山官方正文通过公开页面数据读取，保留了文档更新日期；部分直接浏览返回空壳，不影响已成功读取正文的几个关键页面。具体账户权限、肖像引用链和跨模型质量增益仍待真实验证。</p>
+<p>本轮更有把握的方向是：<strong>让剧本成为完整的拍摄依据，让资产成为真正被调用的视觉约束，让每个镜头有明确要完成的叙事任务。</strong> 这三项有可复用的方法与代码来源，值得先补齐，再讨论进一步换模型或拆分 Agent。</p>
+</article><div class="closing">研究截至 2026-09-09。此报告使用本地字体，无外部脚本、统计或自动媒体加载。外部引用按原始发布方与版本理解。</div></main></body></html>

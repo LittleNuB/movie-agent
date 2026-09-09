@@ -1,6 +1,6 @@
 # Movie Agent · 文档索引
 
-**更新：** 2026-09-08。以下为新项目的阅读入口。已接入真实导演、媒体生成和版本修改，并按反馈完善前端；完整电影质量与验证矩阵仍未通过，实际状态以验证记录为准。
+**更新：** 2026-09-09。以下为新项目的阅读入口。已接入真实导演、媒体生成和版本修改，并按反馈完善前端；前期制作与参考工程已确认并进入实施，完整电影质量与验证矩阵仍未通过，实际状态以验证记录为准。
 
 ## 当前规格
 
@@ -24,6 +24,7 @@
 | [任务记录](./agents/issue-tracker.md) | 本地文档任务入口，不自动创建 GitHub Issues |
 | [可点击原型规格](./plans/clickable-prototype.md) | 已实现；2026-09-06 用户暂定通过 UI |
 | [能力建设范围](./plans/capability-mvp.md) | 已获实施授权，真实电影创作与修改 MVP 进行中 |
+| [前期制作能力规格](./plans/preproduction-quality.md)与[决定](./adr/0007-preproduction-and-reference-engineering.md) | 剧本制作说明、参考依赖、镜头输入、分镜预演；已确认，工程与真实收益分别验证 |
 | [实施进度](./plans/runtime-implementation.md) | 代码、真实接入与阶段交付状态 |
 | [Windows 运行指南](./runtime-guide.md) | 4318 真实服务、模型设置与恢复 |
 | [对话工作区体验](./plans/frontend-experience.md)及[验收](./validation/frontend-experience-2026-09-08.md) | 真实活动、历史原文、草稿、输入保留与资产浏览 |
@@ -40,6 +41,7 @@
 
 ## 研究历史与迁移
 
+- [生成质量深度研究（2026-09-09）](./research/generation-quality-2026-09-09/report.html)：原研究快照，研究当轮未修改产品或发起生成；后续接受的选择见ADR 0007，不能将全文所有候选方案视为已批准实现。
 - [迁移记录](./provenance/source-migration.md)：来源、文件对应、修订与未迁入内容。
 - [来源清单](./provenance/source-manifest.json)：原工作树文件哈希与目标文件映射。
 - [历史资料索引](./archive/README.md)：早期论证和读者检查，包含已被替代的假设。

@@ -22,3 +22,9 @@
 浏览器验收使用本机已安装的 Python Playwright 工具与 Chromium，工具及其浏览器二进制不随仓库提交。该测试依赖与最终产品依赖分开；没有因原型选择新增本项目开源许可证。
 
 更多来源与观察见[架构研究](./architecture-review-2026-09-05.md)、[创作交互来源](../product/creative-interaction.md)和[历史资料](../archive/README.md)。
+
+## 2026-09-09 前期制作复用决定
+
+[生成质量研究](../research/generation-quality-2026-09-09/report.html)核对了上述三个固定版本。ViMax为MIT；AdCraft为个人及非商业许可，不能默认商用；OpenMontage为AGPL-3.0。许可原文入口位于报告第6节，复制实现或文档时仍须记录具体来源和声明。
+
+按[ADR 0007](../adr/0007-preproduction-and-reference-engineering.md)优先复用ViMax人物派生、选参考和镜头分解方法；吸收AdCraft的父资产与状态关系、OpenMontage的镜头意图和输入编译思路。DOC／Re³用于分层事件与相关上下文的方法参考。GroundShot为有条件的研究证据，未确认可直接引入的公开代码包。当前决定不导入它们的整套运行时，也不选择新的本项目许可证。

@@ -43,3 +43,5 @@ Date: 2026-09-06
 沿用[产品规格](../product/product-spec.md)、[创作交互](../product/creative-interaction.md)、[技术基线](../architecture/technical-baseline.md)及[用户配置模型决定](../adr/0004-user-configured-models.md)。可点击原型的交付与暂定通过见[原型任务](./clickable-prototype.md)。
 
 2026-09-06：实施已开始；真实导演、图片、视频、配音与后期已有分项结果，完整制作与人评尚未完成。当前记录以[实施页](./runtime-implementation.md)为准。
+
+2026-09-09：用户接受[生成质量研究](../research/generation-quality-2026-09-09/report.html)，先文档化再推进。[ADR 0007](../adr/0007-preproduction-and-reference-engineering.md)和[前期制作任务](./preproduction-quality.md)将当前优先级前移到剧本制作说明、参考资产依赖、镜头输入及预演；原整片与修改验收继续有效，尚未完成的质量项不因工具实现而关闭。

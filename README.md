@@ -36,6 +36,7 @@
 - [真实运行使用说明](./docs/runtime-guide.md)：Windows 启动、模型配置、创作和恢复。
 - [对话工作区体验](./docs/plans/frontend-experience.md)：本轮前端范围、实际行为与验证边界。
 - [对话专属资产库](./docs/validation/conversation-assets-2026-09-08.md)：中间文稿、素材、成片与历史版本集中浏览，对话保留简短入口。
+- [前期制作能力建设](./docs/plans/preproduction-quality.md)：2026-09-09 已确认制作说明、参考资产工程、镜头输入与分镜预演方向；分阶段实现，真实质量收益待验证。
 - [真实运行验证记录](./docs/validation/runtime-evidence-2026-09-06.md)：实际产物、已发现问题、21 个场景族状态与费用边界。
 - [首轮人工反馈与资产审阅](./docs/validation/human-review-2026-09-07.md)：用户实际评价及全部本地资产的核对入口。
 - [原型使用说明](./prototype/README.md)：启动、体验路径与示例边界。

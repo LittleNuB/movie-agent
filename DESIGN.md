@@ -1,6 +1,6 @@
 # Movie Agent · 设计入口
 
-**更新：** 2026-09-06。用户暂定通过 UI 并已授权实施真实电影 MVP。运行时、真实媒体与后期正在集成；当前证据和剩余项见[实施记录](./docs/plans/runtime-implementation.md)，不等同于完整电影验收通过。
+**更新：** 2026-09-09。已接入真实电影运行链路并完善对话工作区，完整电影质量仍未通过。用户已确认前期制作与参考工程方向，当前按[实施规格](./docs/plans/preproduction-quality.md)推进；原 MVP 证据和剩余项见[实施记录](./docs/plans/runtime-implementation.md)。
 
 ## 已确认方向
 
@@ -9,6 +9,7 @@
 - 默认共创，支持全权托管、部分托管和项目内切换；关键审核遵循实际授权，持续展示真实进展。
 - 故事提案包含完整故事和结尾；正式剧本可手动编辑。保存不触发制作，明确提交后先理解并按授权执行。
 - 共享参考资产，按镜头选生成路径；视觉审核、代表性试拍、连续声画、声音修改与局部补拍服务故事。
+- 采用剧本形成绑定版本的制作说明，记录因果、动机、状态与镜头表达；建立人物／场景／道具参考及派生关系，按模型和镜头选择输入，不固定三视图；随后用带临时声音的分镜预演检查表达。详见 [ADR 0007](./docs/adr/0007-preproduction-and-reference-engineering.md)，研究收益不算当前能力已通过。
 - 对话为主，左侧项目列表，右侧可开合的多标签作品页，每次显示一个内容；A 日间、B 夜间，C 不采用。
 - 视频时间点标注回到输入框，支持单条或批量发送，绑定具体视频版本；历史作品可查看与继续修改。
 - 制作期间随时发消息，独立中止按钮；异常正常输出文字。页面关闭时本地服务仍运行则已授权制作继续，审核仍等待用户。
@@ -27,6 +28,7 @@
 | [前端规格](./docs/product/frontend-spec.md) | 页面、标签、模式、编辑审核、中止、部署与配置 |
 | [模型与 API 设置](./docs/product/model-settings.md) | 用户自定义连接、模型与用途；个人选型与产品预设的边界 |
 | [技术基线](./docs/architecture/technical-baseline.md) | 已选技术方向、模型／程序责任、待验证能力 |
+| [前期制作能力](./docs/plans/preproduction-quality.md) | 制作说明、参考资产依赖、镜头输入编译、预演与对照验证 |
 | [架构研究](./docs/architecture/architecture-review-2026-09-05.md) | 固定版本的源码观察与证据限制 |
 | [验证矩阵](./docs/validation/first-round-matrix.md) | 七组二十一个场景族及真实证据要求 |
 | [历史模型接入记录](./docs/validation/provider-preflight-2026-09-06.md) | 旧工作区已完成的最小检查及其限制 |
@@ -34,7 +36,7 @@
 
 ## 下一项与未解决事项
 
-当前[可点击原型](./docs/plans/clickable-prototype.md)已获用户暂定通过，代码保存在 `prototype/film-creation` 分支，仅作交互参考。下一项是[真实电影能力建设](./docs/plans/capability-mvp.md)：沿真实对话、剧本、声画、成片和修改推进 MVP，以实际产物与验证结果交付。
+当前[可点击原型](./docs/plans/clickable-prototype.md)保存在 `prototype/film-creation` 分支作交互参考。真实运行和对话资产库已有实现；当前优先任务是[前期制作能力建设](./docs/plans/preproduction-quality.md)，承接[真实电影 MVP](./docs/plans/capability-mvp.md)未通过的故事、参考和质量问题。文档接受、工程实现与真实成片验收分别报告。
 
 当前实现采用 Python 3.12、AgentScope 2.0.7.post1、FastAPI、SQLite 与 FFmpeg，同源 REST／SSE，系统凭据管理器保存 Key。独立配音先用 MiniMax；配乐接口对当前验证账号不可用，替代接入待确定。最终角色数量、完整矩阵结论和安装分发仍未定。赛事条件与日程在交付前重新核验。
 

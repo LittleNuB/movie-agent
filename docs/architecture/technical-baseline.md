@@ -1,5 +1,7 @@
 # 科幻电影 Agent · 技术评审基线
 
+> 当前增量：2026-09-09 已接受 [ADR 0007](../adr/0007-preproduction-and-reference-engineering.md)，按[前期制作能力规格](../plans/preproduction-quality.md)补制作说明、参考依赖与镜头输入。本文件以下2026-09-06评审状态保留来源时间，实际接入以[运行实施记录](../plans/runtime-implementation.md)及根README为准；个人视频规格由ADR 0006取代早期标准版选择。
+
 **更新日期：** 2026-09-06
 
 **状态：** 架构形态、AgentScope 首选路线、首轮验证范围及 Windows 本地个人部署已确认；新仓库文档初始化与可点击原型已获授权。电影运行时的具体接入、角色细分与真实验证尚待完成，不能据此宣称已实现或已证明性能。
