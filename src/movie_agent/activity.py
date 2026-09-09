@@ -10,6 +10,8 @@ TOOL_LABELS = {
     "request_review": "准备作品审核", "record_user_review": "记录审核决定",
     "delegate": "委派专业任务", "resume_production": "恢复制作",
     "rename_project": "更新影片名称",
+    "publish_production_brief": "保存剧本制作说明", "publish_reference_manifest": "整理参考资产",
+    "compile_shot_input": "准备镜头生成输入", "submit_shot_input": "提交已规划镜头",
 }
 
 

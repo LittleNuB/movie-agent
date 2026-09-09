@@ -7,6 +7,7 @@ from dataclasses import asdict
 import httpx
 
 from .config import Binding
+from .preproduction import Preproduction
 from .providers import MediaResult, Provider, ProviderError, data_url, download_media
 from .store import now, uid
 
@@ -74,6 +75,8 @@ class Jobs:
             if args.get("expected_model") and args["expected_model"] != binding.model:
                 raise ValueError("模型用途已改变或与计划型号不一致，已在提交前停止；请核对当前配置")
             snapshot = {k: v for k, v in asdict(binding).items() if k != "key"}
+            if args.get("shot_input_id"):
+                Preproduction(self.store).verify_submission(project_id, args["shot_input_id"], args, purpose, binding)
         return self.store.put_record(project_id, "jobs", {"purpose": purpose, "title": title,
             "request_key": request_key, "args": args, "binding": snapshot, "status": "pending",
             "epoch": self.store.project(project_id)["epoch"], "basis": self.store.project(project_id)["adopted"],
@@ -144,6 +147,9 @@ class Jobs:
                         if current_binding != job["binding"] or (job["args"].get("expected_model")
                                 and job["args"]["expected_model"] != current_binding["model"]):
                             raise ValueError("任务尚未提交，但模型用途已改变或不符合计划型号；请按当前配置重新规划，不发送旧请求")
+                        if job["args"].get("shot_input_id"):
+                            Preproduction(self.store).verify_submission(
+                                job["project_id"], job["args"]["shot_input_id"], job["args"], purpose, provider.binding)
                         args = {**job["args"]["parameters"], "prompt": job["args"]["prompt"]}
                         args["references"] = []
                         for ref in job["args"].get("references", []):
@@ -213,6 +219,7 @@ class Jobs:
                     kind = "image" if purpose == "image" else "video" if purpose in {"video", "videoFallback"} else "audio"
                     artifact = self.store.create_artifact(job["project_id"], kind, job["title"],
                         meta={"job_id": job_id, "purpose": purpose, "media": info, "references": job["args"].get("references", []),
+                              "shot_input_id": job["args"].get("shot_input_id"),
                               "voice_id": job["args"].get("parameters", {}).get("voice_id"),
                               "subtitle_source": result.subtitles, **subtitle_meta},
                         path=relative)

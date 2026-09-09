@@ -6,6 +6,7 @@ from typing import Literal
 from agentscope.message import TextBlock
 from agentscope.tool import FunctionTool, ToolChunk
 
+from .preproduction import Preproduction, ProductionBrief, ReferenceManifest, ShotSpec
 from .providers import Provider, ProviderError
 from .store import Conflict
 
@@ -15,6 +16,7 @@ REVIEW_KINDS = {"proposal", "script", "visual_plan", "trial", "edit_plan", "film
 class FilmTools:
     def __init__(self, store, config, runtime, jobs, media):
         self.store, self.config, self.runtime, self.jobs, self.media = store, config, runtime, jobs, media
+        self.preproduction = Preproduction(store)
 
     def public_snapshot(self, project_id):
         snapshot = self.store.snapshot(project_id)
@@ -33,11 +35,11 @@ class FilmTools:
             raise ValueError("未知制作阶段")
         if stage == "visual" and purpose != "image":
             raise Conflict("视觉准备阶段只制作参考图片；视频和合成须先完成实际视觉审核")
-        if not basis or basis.get("kind") not in {"script", "visual_plan", "shot_plan", "edit_plan"}:
+        if not basis or basis.get("kind") not in {"script", "visual_plan", "shot_plan", "shot_input", "edit_plan"}:
             raise ValueError("制作需要具体剧本、视觉或镜头计划、修改方案作为依据")
         if basis["kind"] in {"script", "visual_plan", "edit_plan"} and p["adopted"].get(basis["kind"]) != basis_id:
             raise Conflict("直接制作依据必须是已采用的那个具体版本；请先记录审核或托管采用")
-        if basis["kind"] == "shot_plan" and basis.get("meta", {}).get("basis", {}).get("script") != p["adopted"].get("script"):
+        if basis["kind"] in {"shot_plan", "shot_input"} and basis.get("meta", {}).get("basis", {}).get("script") != p["adopted"].get("script"):
             raise Conflict("镜头计划的剧本依据已过时，请基于当前采用剧本更新计划")
         for kind, aid in basis.get("meta", {}).get("basis", {}).items():
             if kind in {"script", "visual_plan", "trial"} and p["adopted"].get(kind) != aid:
@@ -136,7 +138,8 @@ class FilmTools:
             for item in data["artifacts"]:
                 item["text"] = item["text"][:450]
                 item["meta"] = {k: v for k, v in item["meta"].items()
-                                if k in {"basis", "asset_ids", "parent", "media", "job_id", "manual", "evidence"}}
+                                if k in {"basis", "asset_ids", "parent", "media", "job_id", "manual", "evidence",
+                                         "brief_id", "manifest_id", "schema_version", "unit_id"}}
             for item in data["jobs"]:
                 item.pop("result", None)
                 item["args"] = {k: v for k, v in item["args"].items() if k in {"stage", "basis_id", "references", "parameters"}}
@@ -179,6 +182,53 @@ class FilmTools:
                 observed_basis.update(self.store.project(project_id)["adopted"])
             return output(review)
 
+        async def publish_production_brief(title: str, brief: ProductionBrief, parent_id: str | None = None):
+            """Save production knowledge bound to a script version, without editing or approving the script.
+            Record entities, event motivation/preconditions/action/result, before/after states,
+            audience information, screen expression and source location. No story score is computed.
+            Missing creative information belongs in open_questions, not invented user requirements.
+            """
+            return output(self.preproduction.publish_brief(
+                project_id, title, ProductionBrief.model_validate(brief), role, parent_id))
+
+        async def publish_reference_manifest(title: str, manifest: ReferenceManifest, parent_id: str | None = None):
+            """Save versioned references linked to a production brief and real project media.
+            Entries describe entity_ids, purpose, story_state, view, assessment and status.
+            Standard/supplement require continuity_check evidence naming the actual asset.
+            parent_asset_ids must occur in real generation-reference/extracted-frame metadata.
+            Save unreviewed results as candidate. This does not approve visuals or generate media.
+            """
+            return output(self.preproduction.publish_manifest(
+                project_id, title, ReferenceManifest.model_validate(manifest), role, parent_id))
+
+        async def compile_shot_input(title: str, spec: ShotSpec, purpose: Literal["video", "videoFallback"],
+                                     expected_model: str, parameters: dict | None = None):
+            """Compile a shot's filmable action into a saved provider input; no external request is sent.
+            Bind brief_id, events and entities; choose text/frames/multimodal with a reason.
+            References select manifest entry_id, API role and what the reference controls.
+            Frames describe composition, action describes motion. Record sound explicitly.
+            Use current model assignment and duration/resolution; submit_shot_input is separate.
+            """
+            current_scope()
+            binding = self.config.binding(purpose)
+            if binding.model != expected_model:
+                raise Conflict("模型用途与预期不一致，请读取当前配置")
+            parameters = self.config.video_parameters(parameters or {}, binding)
+            return output(self.preproduction.compile(project_id, title, ShotSpec.model_validate(spec), purpose,
+                          binding, parameters, self.jobs.client, role))
+
+        async def submit_shot_input(shot_input_id: str, title: str, request_key: str,
+                                    stage: Literal["trial", "production", "edit"], basis_id: str):
+            """Submit the exact previously compiled shot, obeying existing reviews, stop and duplicate gates.
+            Use shot_input_id as basis_id for trial/production; edit requires the adopted edit_plan.
+            The saved prompt, parameters, references and model are used without reconstructing them.
+            """
+            item = self.preproduction.artifact(project_id, shot_input_id, "shot_input")
+            meta = item["meta"]
+            return await generate_media(meta["purpose"], title, meta["prompt"], request_key, meta["unit_id"],
+                                        meta["binding"]["model"], stage, basis_id, meta["parameters"],
+                                        meta["references"], shot_input_id)
+
         async def record_user_review(review_id: str, user_message_id: str, approve: bool, feedback: str):
             """Record a user's natural-language decision on a specific pending review.
             Cite the actual user message after that review; only explicit, unambiguous approval or rejection counts.
@@ -194,7 +244,8 @@ class FilmTools:
         async def generate_media(purpose: Literal["image", "video", "videoFallback", "voice", "music"],
                                  title: str, prompt: str, request_key: str, unit_id: str, expected_model: str,
                                  stage: Literal["visual", "trial", "production", "edit"],
-                                 basis_id: str, parameters: dict | None = None, references: list[dict] | None = None):
+                                 basis_id: str, parameters: dict | None = None, references: list[dict] | None = None,
+                                 shot_input_id: str | None = None):
             """Submit a background media task; returns immediately. Do not duplicate pending requests.
             request_key uniquely identifies this shot/asset attempt (e.g. shot-3-v1); reuse returns its task.
             unit_id is the stable shot/character/voice-line identity in the plan (e.g. SH3); keep it across attempts and Providers.
@@ -204,6 +255,8 @@ class FilmTools:
             Never use seconds as a parameter key. Already submitted cloud tasks keep their original parameters.
             references: [{artifact_id,role}], where role is first_frame/last_frame/reference_image/reference_audio/reference_video.
             basis_id is the concrete plan/script ID; edit stage requires the approved edit_plan ID.
+            Prefer compile_shot_input then submit_shot_input for new planned video shots.
+            shot_input_id binds exact compiled inputs; it cannot be combined with a rewritten prompt or reference list.
             """
             current_scope()
             self.check_gate(project_id, stage, purpose, basis_id)
@@ -222,9 +275,12 @@ class FilmTools:
                 expected = "audio" if ref["role"] == "reference_audio" else "video" if ref["role"] == "reference_video" else "image"
                 if artifact["kind"] != expected:
                     raise ValueError("参考角色与素材类型不匹配；视频需先 extract_frame 再作为图片引用")
-            job = await self.jobs.submit(project_id, purpose, title, request_key,
-                {"prompt": prompt, "parameters": parameters or {}, "references": references or [],
-                 "stage": stage, "basis_id": basis_id, "unit_id": unit_id, "expected_model": expected_model})
+            args = {"prompt": prompt, "parameters": parameters or {}, "references": references or [],
+                    "stage": stage, "basis_id": basis_id, "unit_id": unit_id, "expected_model": expected_model}
+            if shot_input_id:
+                args["shot_input_id"] = shot_input_id
+                self.preproduction.verify_submission(project_id, shot_input_id, args, purpose, binding)
+            job = await self.jobs.submit(project_id, purpose, title, request_key, args)
             return output(job)
 
         async def compose(title: str, kind: Literal["trial", "film"], request_key: str,
@@ -323,6 +379,7 @@ class FilmTools:
             return output(self.store.update_project(project_id, title=title.strip()))
 
         functions = [read_project, read_artifact, publish_document, generate_media, compose, export_film_version, inspect_media, extract_frame, recover_task, voice_catalog]
+        functions += [publish_production_brief, publish_reference_manifest, compile_shot_input, submit_shot_input]
         if role == "director":
             functions += [request_review, record_user_review, delegate, resume_production, rename_project]
         result = []
