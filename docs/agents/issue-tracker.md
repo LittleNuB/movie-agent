@@ -8,6 +8,7 @@
 
 | 任务 | 状态 | 依据 |
 |---|---|---|
+| [Logo与UI视觉优化](../plans/ui-visual-polish.md) | 下一轮优先；已生成Logo概念对照，具体选型待用户反馈 | 2026-09-09 用户明确下一轮做UI视觉优化，缺少独特Logo |
 | [独立私有仓库与文档初始化](../plans/repository-initialization.md) | 已完成并推送；检查结果见验收记录 | 所有者明确要求按初始化计划建仓、提交与推送 |
 | [可点击原型](../plans/clickable-prototype.md) | 已实现于 `prototype/film-creation`；2026-09-06 用户暂定通过 UI，浏览器结果单独记录 | 所有者最新明确反馈 |
 | [通用模型设置](../product/model-settings.md) | 已按反馈调整；8 组聚焦浏览器检查通过，随后 UI 暂定通过 | 用户明确个人模型组合不能作为完整产品预设 |

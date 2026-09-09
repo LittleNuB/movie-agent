@@ -36,7 +36,9 @@
 
 ## 下一项与未解决事项
 
-当前[可点击原型](./docs/plans/clickable-prototype.md)保存在 `prototype/film-creation` 分支作交互参考。真实运行和对话资产库已有实现；当前优先任务是[前期制作能力建设](./docs/plans/preproduction-quality.md)，承接[真实电影 MVP](./docs/plans/capability-mvp.md)未通过的故事、参考和质量问题。文档接受、工程实现与真实成片验收分别报告。
+2026-09-09 最新安排：下一轮优先[Logo与UI视觉优化](./docs/plans/ui-visual-polish.md)，先讨论实际品牌参考，再统一日间／夜间界面的视觉。前期制作质量工作及其未通过项继续保留。
+
+当前[可点击原型](./docs/plans/clickable-prototype.md)保存在 `prototype/film-creation` 分支作交互参考。真实运行和对话资产库已有实现；[前期制作能力建设](./docs/plans/preproduction-quality.md)继续承接[真实电影 MVP](./docs/plans/capability-mvp.md)未通过的故事、参考和质量问题。文档接受、工程实现与真实成片验收分别报告。
 
 当前实现采用 Python 3.12、AgentScope 2.0.7.post1、FastAPI、SQLite 与 FFmpeg，同源 REST／SSE，系统凭据管理器保存 Key。独立配音先用 MiniMax；配乐接口对当前验证账号不可用，替代接入待确定。最终角色数量、完整矩阵结论和安装分发仍未定。赛事条件与日程在交付前重新核验。
 
