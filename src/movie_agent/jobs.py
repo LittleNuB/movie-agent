@@ -52,6 +52,7 @@ class Jobs:
         await self.client.aclose()
 
     async def submit(self, project_id, purpose, title, request_key, args):
+        args = Preproduction(self.store).bind_input(project_id, args)
         if not request_key or len(request_key) > 160:
             raise ValueError("需要稳定且不超过160字符的制作请求标识")
         for job in self.store.records(project_id, "jobs"):
@@ -147,8 +148,12 @@ class Jobs:
                         if current_binding != job["binding"] or (job["args"].get("expected_model")
                                 and job["args"]["expected_model"] != current_binding["model"]):
                             raise ValueError("任务尚未提交，但模型用途已改变或不符合计划型号；请按当前配置重新规划，不发送旧请求")
+                        preproduction = Preproduction(self.store)
+                        bound_args = preproduction.bind_input(job["project_id"], job["args"])
+                        if bound_args != job["args"]:
+                            job = self.store.update_record(job_id, args=bound_args)
                         if job["args"].get("shot_input_id"):
-                            Preproduction(self.store).verify_submission(
+                            preproduction.verify_submission(
                                 job["project_id"], job["args"]["shot_input_id"], job["args"], purpose, provider.binding)
                         args = {**job["args"]["parameters"], "prompt": job["args"]["prompt"]}
                         args["references"] = []

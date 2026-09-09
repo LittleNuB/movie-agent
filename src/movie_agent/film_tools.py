@@ -279,7 +279,9 @@ class FilmTools:
                     "stage": stage, "basis_id": basis_id, "unit_id": unit_id, "expected_model": expected_model}
             if shot_input_id:
                 args["shot_input_id"] = shot_input_id
-                self.preproduction.verify_submission(project_id, shot_input_id, args, purpose, binding)
+            args = self.preproduction.bind_input(project_id, args)
+            if args.get("shot_input_id"):
+                self.preproduction.verify_submission(project_id, args["shot_input_id"], args, purpose, binding)
             job = await self.jobs.submit(project_id, purpose, title, request_key, args)
             return output(job)
 

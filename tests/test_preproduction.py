@@ -243,3 +243,30 @@ async def test_compiled_references_reach_provider_and_returned_media_keeps_linea
         assert video["meta"]["references"] == meta["references"]
     finally:
         await jobs.close()
+
+
+async def test_generic_media_tool_cannot_change_a_compiled_basis_by_omitting_input_id(world):
+    w = world
+    visual = w.store.create_artifact(w.pid, "visual_plan", "已批准视觉")
+    w.store.adopt(w.pid, visual["id"], None)
+    compiled = compile_input(w)
+    jobs = Jobs(w.store, configuration(w), None)
+    try:
+        film = FilmTools(w.store, configuration(w), None, jobs, None)
+        generate = next(t for t in film.for_agent(w.pid, "director") if t.name == "generate_media")
+        args = {"purpose": "video", "title": "绕过专用工具", "prompt": "另一场戏", "request_key": "bypass",
+                "unit_id": "SH1", "expected_model": w.binding.model, "stage": "trial",
+                "basis_id": compiled["id"], "parameters": compiled["meta"]["parameters"],
+                "references": compiled["meta"]["references"]}
+        result = await generate(**args)
+        assert result.state == "error" and "编译镜头不一致" in result.content[0].text
+        assert w.store.records(w.pid, "jobs") == []
+        # The same inference applies to direct job submission, before external work.
+        with pytest.raises(Conflict, match="编译镜头不一致"):
+            await jobs.submit(w.pid, "video", "绕过工具", "direct-bypass",
+                              {k: v for k, v in args.items() if k not in {"purpose", "title", "request_key"}})
+        args["prompt"] = compiled["meta"]["prompt"]
+        valid = await generate(**args)
+        assert json.loads(valid.content[0].text)["args"]["shot_input_id"] == compiled["id"]
+    finally:
+        await jobs.close()

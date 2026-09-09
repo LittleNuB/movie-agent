@@ -311,3 +311,20 @@ class Preproduction:
         if any(args.get(key) != value for key, value in expected.items()):
             raise Conflict("提交内容与已编译镜头不一致，请形成新的镜头输入版本")
         return item
+
+    def bind_input(self, project_id, args):
+        """A compiled basis implies its input identity even on the generic media tool.
+
+        Legacy job arguments retain their existing gate behavior. An explicit or
+        inferred compiled identity always goes through verify_submission.
+        """
+        input_id = args.get("shot_input_id")
+        try:
+            basis = self.artifact(project_id, args.get("basis_id"))
+        except KeyError:
+            basis = None
+        if basis and basis["kind"] == "shot_input":
+            if input_id and input_id != basis["id"]:
+                raise Conflict("编译镜头身份与制作依据不一致")
+            input_id = basis["id"]
+        return {**args, "shot_input_id": input_id} if input_id else args
