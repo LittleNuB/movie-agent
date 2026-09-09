@@ -8,7 +8,7 @@
 
 | 任务 | 状态 | 依据 |
 |---|---|---|
-| [Logo与UI视觉优化](../plans/ui-visual-polish.md) | 用户已选03「显影」，SVG已接入真实界面；整体视觉优化继续，实际比例待复评 | 2026-09-09 用户明确UI视觉优化并选择03 |
+| [Logo与UI视觉优化](../plans/ui-visual-polish.md) | 03「显影」已接入；[优化草案](../plans/ui-visual-audit-2026-09-09.md)已整理待讨论，尚未实施 | 2026-09-09 用户选择03后要求先梳理优化方案 |
 | [独立私有仓库与文档初始化](../plans/repository-initialization.md) | 已完成并推送；检查结果见验收记录 | 所有者明确要求按初始化计划建仓、提交与推送 |
 | [可点击原型](../plans/clickable-prototype.md) | 已实现于 `prototype/film-creation`；2026-09-06 用户暂定通过 UI，浏览器结果单独记录 | 所有者最新明确反馈 |
 | [通用模型设置](../product/model-settings.md) | 已按反馈调整；8 组聚焦浏览器检查通过，随后 UI 暂定通过 | 用户明确个人模型组合不能作为完整产品预设 |

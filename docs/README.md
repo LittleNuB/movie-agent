@@ -21,7 +21,7 @@
 
 | 文档 | 状态与用途 |
 |---|---|
-| [Logo与UI视觉优化](./plans/ui-visual-polish.md) | 已选03「显影」并接入SVG；整体视觉优化继续，品牌接入检查已记录 |
+| [Logo与UI视觉优化](./plans/ui-visual-polish.md) | 已选03「显影」并接入SVG；[优化草案](./plans/ui-visual-audit-2026-09-09.md)已整理待讨论，尚未实施 |
 | [任务记录](./agents/issue-tracker.md) | 本地文档任务入口，不自动创建 GitHub Issues |
 | [可点击原型规格](./plans/clickable-prototype.md) | 已实现；2026-09-06 用户暂定通过 UI |
 | [能力建设范围](./plans/capability-mvp.md) | 已获实施授权，真实电影创作与修改 MVP 进行中 |
