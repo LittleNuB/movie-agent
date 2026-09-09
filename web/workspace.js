@@ -44,14 +44,15 @@ export function trace(snapshot,runId){
  return `<details class="trace" data-detail="trace-${runId}"><summary><span class="activity-dot ${running?'pulse':''}"></span><span class="trace-label">${esc(running?.label||'查看执行过程')}</span><small>${items.length} 项活动</small></summary><div class="trace-body">${activityRows(items)}</div></details>`;
 }
 export const jobRows=s=>s.jobs.map(j=>`<div class="job-row"><div><strong>${esc(j.title)}</strong><small>${esc(statuses[j.status]||j.status)}${j.candidate_only?' · 仅保留为候选':''} · ${date(j.created)}</small>${j.error?`<p>${esc(j.error)}</p>`:''}</div><div>${(j.artifact_ids||[]).map(id=>button('asset','查看结果',`data-id="${id}"`)).join('')}${['unknown','download_failed','query_failed'].includes(j.status)?button('recover','核对结果',`data-id="${j.id}"`):''}</div></div>`).join('');
-export function workSummary(s){
- if(!s)return '先从一个想法开始';
+export function workStatus(s){
+ if(!s)return {text:'先从一个想法开始',tone:'idle'};
  const p=s.project,pending=s.reviews.filter(r=>r.status==='pending').length,active=s.runs.filter(r=>['running','pending'].includes(r.status)),jobs=s.jobs.filter(j=>['pending','submitting','queued','running','rendering','downloading'].includes(j.status)),waiting=(s.inputs||[]).filter(i=>i.status==='pending').length;
- if(active.length){const a=(s.activities||[]).findLast(a=>['preparing','running'].includes(a.status));return a?`${roles[a.role]||'导演'} · ${a.label}`:`${roles[active[0].role]||'导演'}正在处理${waiting?' · 有新消息等待处理':''}`;}
- if(pending)return `有 ${pending} 项内容等你审核${p.production_paused?' · 媒体制作已暂停':''}`;
- if(p.production_paused)return '制作已暂停，可以继续讨论';
- if(jobs.length)return `${jobs.length} 项媒体任务进行中，仍可发送消息`;
- if(waiting)return '消息已接收，等待导演处理';
- if(s.runs.at(-1)?.status==='failed')return '上一轮处理受阻，可以继续说明或检查连接';
- return '这一轮已结束，随时继续';
+ if(active.length){const a=(s.activities||[]).findLast(a=>['preparing','running'].includes(a.status));return {text:a?`${roles[a.role]||'导演'} · ${a.label}`:`${roles[active[0].role]||'导演'}正在处理${waiting?' · 有新消息等待处理':''}`,tone:'running'};}
+ if(pending)return {text:`有 ${pending} 项内容等你审核${p.production_paused?' · 媒体制作已暂停':''}`,tone:'review'};
+ if(p.production_paused)return {text:'制作已暂停，可以继续讨论',tone:'paused'};
+ if(jobs.length)return {text:`${jobs.length} 项媒体任务进行中，仍可发送消息`,tone:'running'};
+ if(waiting)return {text:'消息已接收，等待导演处理',tone:'waiting'};
+ if(s.runs.at(-1)?.status==='failed')return {text:'上一轮处理受阻，可以继续说明或检查连接',tone:'error'};
+ return {text:'这一轮已结束，随时继续',tone:'idle'};
 }
+export const workSummary=s=>workStatus(s).text;

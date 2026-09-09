@@ -1,7 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {markdown} from '../web/workspace.js';
+import {markdown,workStatus} from '../web/workspace.js';
 import {artifactRelations,libraryAssets} from '../web/panels.js';
+
+test('newly queued input replaces a previous failure in both status text and tone',()=>{
+ const snapshot={project:{production_paused:false},reviews:[],runs:[{status:'failed'}],jobs:[],inputs:[]};
+ assert.equal(workStatus(snapshot).tone,'error');
+ snapshot.inputs.push({status:'pending'});
+ assert.deepEqual(workStatus(snapshot),{text:'消息已接收，等待导演处理',tone:'waiting'});
+ snapshot.runs.push({status:'running',role:'director'});
+ assert.equal(workStatus(snapshot).tone,'running');
+});
 
 test('common prose and shot tables have readable structure',()=>{
  const html=markdown('## 标题\n1. 开场\n2. 选择\n\n> 保持静止\n[参考](https://example.com/film)\n\n| 镜头 | 动作 |\n| --- | --- |\n| 1 | 抬头 |');
